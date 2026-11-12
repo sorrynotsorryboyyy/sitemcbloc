@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Site MCBloc
 
-## Getting Started
+Site du réseau de mini-jeux Minecraft **MCBloc** (`play.mcbloc.fr`). Next.js 15 + Tailwind CSS 4, hébergé sur Vercel.
 
-First, run the development server:
+> État actuel : **front-end uniquement**. Statut serveur, paiement et liaison de compte sont simulés dans `lib/services/`.
+
+## Démarrer
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # build de production
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pages
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Route | Contenu |
+|---|---|
+| `/` | Présentation : IP à copier, joueurs en ligne, mini-jeux, grades, FAQ |
+| `/boutique` | Onglets `#grades`, `#pieces`, `#cosmetiques`, `#boosters` |
+| `/boutique/panier` | Panier (sauvegardé dans le navigateur) |
+| `/boutique/paiement` | Pseudo + CGV + paiement **simulé** → confirmation |
+| `/compte` | Liaison du compte via `/site WEB-XXXXXX` en jeu, puis profil |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`boutique.mcbloc.fr` redirige vers `mcbloc.fr/boutique` (voir `next.config.ts`).
 
-## Learn More
+## Où modifier quoi
 
-To learn more about Next.js, take a look at the following resources:
+- Couleurs (charte `Theme.java`) : `app/globals.css` (`@theme`)
+- IP, Discord, commande de liaison : `lib/data/site.ts`
+- Jeux, FAQ : `lib/data/games.ts`
+- Grades : `lib/data/ranks.ts` · Packs de pièces : `lib/data/coins.ts` · Boosters : `lib/data/boosters.ts`
+- Cosmétiques et coffres (copie de `cosmetics.yml`) : `lib/data/cosmetics.ts`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Brancher le backend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Chaque fichier de `lib/services/` documente le contrat d'API attendu :
 
-## Deploy on Vercel
+- `link.ts` : `POST /api/link/code`, `GET /api/link/status`, `POST /api/link/confirm` (appelé par le proxy pour `/site`, avec `Authorization: Bearer <LINK_SECRET>`). `/site` est distincte de `/lier`, qui sert à lier Discord (bot McBlocDidi).
+- `shop.ts` : checkout Tebex/Stripe → webhook → récompenses en attente récupérées par le proxy (`/api/rewards/pending` + `ack`, même modèle que McBlocDidi). Les pièces sont **ajoutées** au solde.
+- `serverStatus.ts` : mcsrvstat.us ou une API maison.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+En mode dev, la page `/compte` affiche un bouton « Simuler /site » pour tester la liaison sans serveur.
