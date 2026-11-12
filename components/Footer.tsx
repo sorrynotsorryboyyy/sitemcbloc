@@ -19,6 +19,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-muted">
             <li><Link className="hover:text-primary" href="/#jeux">Mini-jeux</Link></li>
             <li><Link className="hover:text-primary" href="/boutique">Boutique</Link></li>
+            <li><Link className="hover:text-primary" href="/vote">Voter</Link></li>
             <li><Link className="hover:text-primary" href="/actualites">Actualités</Link></li>
             <li><Link className="hover:text-primary" href="/compte">Mon compte</Link></li>
           </ul>
@@ -28,6 +29,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-muted">
             <li><a className="hover:text-primary" href={site.discord} target="_blank" rel="noreferrer">Discord</a></li>
             <li><Link className="hover:text-primary" href="/#faq">FAQ</Link></li>
+            <li><Link className="hover:text-primary" href="/regles">Règles</Link></li>
           </ul>
         </div>
       </div>

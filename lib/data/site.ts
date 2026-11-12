@@ -1,3 +1,5 @@
+import { network } from "@/lib/data/network";
+
 export const site = {
   /**
    * Interrupteur d'ouverture du serveur.
@@ -6,14 +8,14 @@ export const site = {
    * Passer à true le jour de l'ouverture (une fois le backend de paiement branché).
    */
   launched: false as boolean,
-  name: "MCBloc",
-  tagline: "Réseau de mini-jeux",
-  description:
-    "MCBloc, le réseau Minecraft de mini-jeux : Piggy Wars, SumoGames, CoreWars. Classement ELO, pass saisonnier, cosmétiques et défis quotidiens.",
-  url: "https://mcbloc.fr",
-  ip: "play.mcbloc.fr",
-  versions: "1.8 – 1.21",
-  discord: "https://discord.mcbloc.fr",
+  // Infos publiques : data/network.json (source unique partagée avec le bot et le plugin)
+  name: network.name,
+  tagline: network.tagline,
+  description: network.description,
+  url: network.links.site,
+  ip: network.ip,
+  versions: network.versions,
+  discord: network.links.discord,
   /** Commande en jeu pour lier le compte au site (≠ /lier, réservée à Discord). */
   linkCommand: "/site",
   linkCodePrefix: "WEB-",
@@ -23,6 +25,7 @@ export const nav = [
   { href: "/", label: "Accueil" },
   { href: "/#jeux", label: "Jeux" },
   { href: "/boutique", label: "Boutique" },
+  { href: "/vote", label: "Voter" },
   { href: "/actualites", label: "Actualités" },
   { href: "/compte", label: "Mon compte" },
 ] as const;

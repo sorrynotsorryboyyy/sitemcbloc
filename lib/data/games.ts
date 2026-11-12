@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/Icon";
+import { network } from "@/lib/data/network";
 
 export type Game = {
   id: string;
@@ -15,48 +16,15 @@ export type Game = {
   logo?: string;
 };
 
-// Sources : mcblocManager/README.md et C:\mcblocdidi\config.js (minigames)
-export const games: Game[] = [
-  {
-    id: "piggy-wars",
-    name: "Piggy Wars",
-    server: "piggywars",
-    emoji: "🐷",
-    mode: "Rouge vs Bleu · 1v1 à 3v3",
-    description:
-      "Lance des cochons sur tes adversaires pour les éliminer ou les pousser dans le vide ! Première équipe à 10 kills.",
-    features: ["Classement ELO", "~10 classes", "Parties rapides"],
-    color: "#ff7aa8",
-    banner: "/images/banner-piggywars.png",
-    logo: "/games/piggywars.png",
-  },
-  {
-    id: "sumogames",
-    name: "SumoGames",
-    server: "sumotower",
-    emoji: "🤼",
-    mode: "Chacun pour soi · 2 à 8 joueurs",
-    description:
-      "Sumo sur une tour à plusieurs étages : pas de dégâts, que du recul. Coffres et kits façon Survival Games — sois le dernier debout !",
-    features: ["Knockback pur", "Coffres à loot", "Kits"],
-    color: "#55ff7f",
-    banner: "/images/banner-sumogames.png",
-    logo: "/games/sumogames.png",
-  },
-  {
-    id: "corewars",
-    name: "CoreWars",
-    server: "corewars",
-    emoji: "🔮",
-    mode: "Rouge vs Bleu · jusqu'à 10v10",
-    description:
-      "Construis, défends et détruis le cœur de la base ennemie. Générateurs d'or, 7 classes et de grosses batailles d'équipe.",
-    features: ["7 classes", "Générateurs d'or", "Grandes équipes"],
-    color: "#b36bff",
-    banner: "/images/banner-corewars.png",
-    logo: "/games/corewars.png",
-  },
-];
+/** Visuels propres au site (bannière + mascotte), par identifiant de jeu. */
+const gameAssets: Record<string, { banner: string; logo?: string }> = {
+  "piggy-wars": { banner: "/images/banner-piggywars.png", logo: "/games/piggywars.png" },
+  sumogames: { banner: "/images/banner-sumogames.png", logo: "/games/sumogames.png" },
+  corewars: { banner: "/images/banner-corewars.png", logo: "/games/corewars.png" },
+};
+
+// Textes des jeux : data/network.json (identiques sur le site, le Discord et en jeu).
+export const games: Game[] = network.games.map((g) => ({ ...g, banner: gameAssets[g.id]?.banner ?? "/images/banner-mcbloc.png", logo: gameAssets[g.id]?.logo }));
 
 export const features: { icon: IconName; title: string; text: string }[] = [
   { icon: "trophy", title: "Classement ELO", text: "Grimpe dans les classements de chaque mini-jeu et prouve que tu es le meilleur." },
