@@ -1,107 +1,119 @@
 import { site } from "@/lib/data/site";
 
 /**
- * Liaison compte Minecraft ↔ site, via la commande en jeu `/site WEB-XXXXXX`.
- * (Différente de `/lier MCB-XXXXXX`, réservée à la liaison Discord du bot McBlocDidi.)
+ * Liaison du site avec un compte Minecraft, via la commande en jeu `/site WEB-XXXXXX`.
+ * (Différente de `/lier MCB-XXXXXX`, réservée à la liaison Discord.)
  *
- * MOCK pour l'instant : tout est stocké dans le navigateur.
- *
- * Contrat prévu pour le backend :
- *  - POST /api/link/code                → { code: "WEB-XXXXXX", expiresAt }   (10 min, usage unique)
- *  - GET  /api/link/status?code=...     → { status: "pending" | "linked" | "expired", account? }
- *  - POST /api/link/confirm             appelé par le proxy (commande /site, calquée sur LierCommand.java)
- *        body { code, uuid, name }, header Authorization: Bearer <LINK_SECRET>
+ * Le bot Discord (Railway) sert d'intermédiaire : il est déjà relié au proxy du serveur,
+ * ce qui évite d'ouvrir la base MySQL à Internet.
+ *  - POST   {bot}/public/site-link/code    → { code, token, expiresAt }
+ *  - GET    {bot}/public/site-link/status  → { status, account? }   (Authorization: Bearer <token>)
+ *  - DELETE {bot}/public/site-link         → { ok }
+ * Le jeton (secret) reste dans ce navigateur ; le proxy envoie les profils des comptes liés au bot.
  */
-export type LinkedAccount = {
-  uuid: string;
-  username: string;
-  rank: string;
-  rankColor: string;
+
+export type GameStat = { game: string; wins: number; elo?: number };
+
+export type AccountProfile = {
+  name: string;
+  rank: { id: string; name: string };
   coins: number;
   level: number;
-  linkedAt: string;
-  stats: { game: string; wins: number; elo?: number }[];
+  stats: GameStat[];
+  updatedAt: number;
+};
+
+export type LinkedAccount = {
+  uuid: string;
+  name: string;
+  linkedAt: number;
+  /** null tant que le serveur n'a pas encore envoyé le profil (quelques secondes après la liaison) */
+  profile: AccountProfile | null;
 };
 
 export type LinkCode = { code: string; expiresAt: number };
 export type LinkStatus =
   | { status: "pending" }
   | { status: "expired" }
+  | { status: "unknown" }
   | { status: "linked"; account: LinkedAccount };
 
-const CODE_TTL_MS = 10 * 60 * 1000;
-const ACCOUNT_KEY = "mcbloc.account";
-const PENDING_KEY = "mcbloc.link.simulated";
+const TOKEN_KEY = "mcbloc.site.token";
+const ACCOUNT_KEY = "mcbloc.site.account";
 
-const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sans 0/O/1/I pour éviter les confusions
+const api = (path: string) => `${site.botApi.replace(/\/$/, "")}${path}`;
 
-function randomCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(6));
-  return site.linkCodePrefix + Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join("");
-}
-
-function read<T>(key: string): T | null {
+function storage(): Storage | null {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
+    return window.localStorage;
   } catch {
     return null;
   }
 }
 
-function write(key: string, value: unknown) {
+const getToken = () => storage()?.getItem(TOKEN_KEY) ?? null;
+
+function setToken(token: string | null) {
+  const s = storage();
+  if (!s) return;
+  if (token) s.setItem(TOKEN_KEY, token);
+  else s.removeItem(TOKEN_KEY);
+}
+
+function cacheAccount(account: LinkedAccount | null) {
+  const s = storage();
+  if (!s) return;
+  if (account) s.setItem(ACCOUNT_KEY, JSON.stringify(account));
+  else s.removeItem(ACCOUNT_KEY);
+}
+
+/** Dernier compte lié connu (lecture immédiate, sans réseau ; ex. pseudo pré-rempli au paiement). */
+export function getCachedAccount(): LinkedAccount | null {
   try {
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(value));
+    const raw = storage()?.getItem(ACCOUNT_KEY);
+    return raw ? (JSON.parse(raw) as LinkedAccount) : null;
   } catch {
-    /* stockage indisponible : on ignore */
+    return null;
   }
 }
 
+/** Demande un code. Le jeton secret est gardé dans ce navigateur. */
 export async function createLinkCode(): Promise<LinkCode> {
-  await new Promise((r) => setTimeout(r, 300));
-  write(PENDING_KEY, null);
-  return { code: randomCode(), expiresAt: Date.now() + CODE_TTL_MS };
+  const res = await fetch(api("/public/site-link/code"), { method: "POST" });
+  if (res.status === 429) throw new Error("Trop de demandes : réessaie dans quelques minutes.");
+  if (!res.ok) throw new Error("Le service de liaison est injoignable pour le moment.");
+  const data = (await res.json()) as { code: string; token: string; expiresAt: number };
+  setToken(data.token);
+  cacheAccount(null);
+  return { code: data.code, expiresAt: data.expiresAt };
 }
 
-export async function getLinkStatus(code: LinkCode): Promise<LinkStatus> {
-  if (Date.now() > code.expiresAt) return { status: "expired" };
-  const simulated = read<{ code: string; username: string }>(PENDING_KEY);
-  if (simulated?.code === code.code) {
-    const account = mockAccount(simulated.username);
-    write(ACCOUNT_KEY, account);
-    write(PENDING_KEY, null);
-    return { status: "linked", account };
+/** Statut du jeton de ce navigateur (en attente, lié avec profil, expiré...). */
+export async function getLinkStatus(): Promise<LinkStatus> {
+  const token = getToken();
+  if (!token) return { status: "unknown" };
+  const res = await fetch(api("/public/site-link/status"), { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
+  if (!res.ok) throw new Error("Le service de liaison est injoignable pour le moment.");
+  const data = (await res.json()) as LinkStatus;
+  if (data.status === "linked") cacheAccount(data.account);
+  if (data.status === "unknown") {
+    setToken(null);
+    cacheAccount(null);
   }
-  return { status: "pending" };
+  return data;
 }
 
-/** Outil de développement : simule le joueur qui tape /site <code> en jeu. */
-export function simulateInGameCommand(code: string, username: string) {
-  write(PENDING_KEY, { code, username });
-}
-
-export function getLinkedAccount(): LinkedAccount | null {
-  return read<LinkedAccount>(ACCOUNT_KEY);
+/** Compte lié de ce navigateur (null s'il n'y en a pas). */
+export async function getLinkedAccount(): Promise<LinkedAccount | null> {
+  const s = await getLinkStatus();
+  return s.status === "linked" ? s.account : null;
 }
 
 export async function unlink(): Promise<void> {
-  write(ACCOUNT_KEY, null);
-}
-
-function mockAccount(username: string): LinkedAccount {
-  return {
-    uuid: crypto.randomUUID(),
-    username,
-    rank: "VIP",
-    rankColor: "#4dd2ff",
-    coins: 12450,
-    level: 27,
-    linkedAt: new Date().toISOString(),
-    stats: [
-      { game: "Piggy Wars", wins: 138, elo: 1420 },
-      { game: "SumoGames", wins: 64 },
-      { game: "CoreWars", wins: 31 },
-    ],
-  };
+  const token = getToken();
+  if (token) {
+    await fetch(api("/public/site-link"), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }).catch(() => null);
+  }
+  setToken(null);
+  cacheAccount(null);
 }

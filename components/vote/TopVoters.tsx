@@ -12,7 +12,7 @@ type Voter = { name: string; votes: number };
  * Masqué tant que le serveur n'est pas ouvert ou que NEXT_PUBLIC_BOT_URL n'est pas défini.
  */
 export default function TopVoters() {
-  const api = process.env.NEXT_PUBLIC_BOT_URL;
+  const api = site.botApi;
   const [voters, setVoters] = useState<Voter[] | null>(null);
   const [failed, setFailed] = useState(false);
 

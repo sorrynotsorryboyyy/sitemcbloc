@@ -4,25 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { site } from "@/lib/data/site";
+import { ranks } from "@/lib/data/ranks";
 import Icon from "@/components/Icon";
 import LaunchNotice from "@/components/LaunchNotice";
-import { formatNumber, isValidUsername } from "@/lib/format";
-import {
-  createLinkCode,
-  getLinkStatus,
-  getLinkedAccount,
-  simulateInGameCommand,
-  unlink,
-  type LinkCode,
-  type LinkedAccount,
-} from "@/lib/services/link";
+import { formatNumber } from "@/lib/format";
+import { createLinkCode, getLinkStatus, unlink, type LinkCode, type LinkedAccount } from "@/lib/services/link";
+
+/** Couleurs des grades : boutique (network.json) + grades du staff (Theme.java). */
+const RANK_COLORS: Record<string, string> = {
+  ...Object.fromEntries(ranks.map((r) => [r.id, r.color])),
+  admin: "#ff4040",
+  moderateur: "#ff9f1c",
+  helper: "#3ddc97",
+  partenaire: "#b26bff",
+  beta: "#a3e635",
+  joueur: "#c8c8c8",
+};
 
 export default function Account() {
-  if (!site.launched) return <AccountComingSoon />;
+  if (!site.linking) return <AccountComingSoon />;
   return <AccountLive />;
 }
 
-/** Avant l'ouverture : pas de liaison possible, on explique comment ça marchera. */
+/** Liaison désactivée : on explique comment ça marchera. */
 function AccountComingSoon() {
   const steps = [
     { icon: "user" as const, title: "Génère ton code", text: "Un code personnel, valable 10 minutes, affiché sur cette page." },
@@ -34,23 +38,16 @@ function AccountComingSoon() {
       <LaunchNotice title="La liaison de compte arrive à l'ouverture">
         Le serveur n&apos;est pas encore ouvert : il n&apos;est pas encore possible de lier ton compte Minecraft au site.
       </LaunchNotice>
-      <div>
-        <h2 className="mb-4 font-display text-2xl">Comment ça marchera</h2>
-        <ol className="grid gap-4 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="relative rounded-xl border border-line bg-surface p-5">
-              <span className="absolute right-4 top-3 font-display text-3xl text-line">{i + 1}</span>
-              <Icon name={s.icon} size={28} className="text-primary" />
-              <p className="mt-3 font-bold">{s.title}</p>
-              <p className="mt-1 text-sm text-muted">{s.text}</p>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-4 flex items-center gap-1.5 text-xs text-muted">
-          <Icon name="info-box" size={14} className="text-primary" />
-          <span className="font-mono">/lier</span> sert à lier ton compte <strong>Discord</strong>, pas le site.
-        </p>
-      </div>
+      <ol className="grid gap-4 md:grid-cols-3">
+        {steps.map((s, i) => (
+          <li key={s.title} className="relative rounded-xl border border-line bg-surface p-5">
+            <span className="absolute right-4 top-3 font-display text-3xl text-line">{i + 1}</span>
+            <Icon name={s.icon} size={28} className="text-primary" />
+            <p className="mt-3 font-bold">{s.title}</p>
+            <p className="mt-1 text-sm text-muted">{s.text}</p>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -58,29 +55,50 @@ function AccountComingSoon() {
 function AccountLive() {
   const [account, setAccount] = useState<LinkedAccount | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setAccount(getLinkedAccount());
-    setLoaded(true);
+    getLinkStatus()
+      .then((s) => setAccount(s.status === "linked" ? s.account : null))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setLoaded(true));
   }, []);
 
   if (!loaded) return <p className="mt-8 text-muted">Chargement…</p>;
-  return account ? (
-    <Profile account={account} onUnlink={async () => { await unlink(); setAccount(null); }} />
-  ) : (
-    <LinkFlow onLinked={setAccount} />
-  );
+  if (account) {
+    return (
+      <Profile
+        account={account}
+        onUpdate={setAccount}
+        onUnlink={async () => {
+          await unlink();
+          setAccount(null);
+        }}
+      />
+    );
+  }
+  return <LinkFlow onLinked={setAccount} initialError={error} />;
 }
 
-function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
+function LinkFlow({ onLinked, initialError }: { onLinked: (a: LinkedAccount) => void; initialError: string | null }) {
   const [code, setCode] = useState<LinkCode | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [expired, setExpired] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(initialError);
+  const [busy, setBusy] = useState(false);
 
   const generate = useCallback(async () => {
     setExpired(false);
-    setCode(await createLinkCode());
+    setError(null);
+    setBusy(true);
+    try {
+      setCode(await createLinkCode());
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }, []);
 
   // Compte à rebours + interrogation du statut toutes les 2 s
@@ -88,11 +106,15 @@ function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
     if (!code) return;
     const tick = setInterval(() => setNow(Date.now()), 1000);
     const poll = setInterval(async () => {
-      const s = await getLinkStatus(code);
-      if (s.status === "linked") onLinked(s.account);
-      if (s.status === "expired") {
-        setExpired(true);
-        setCode(null);
+      try {
+        const s = await getLinkStatus();
+        if (s.status === "linked") onLinked(s.account);
+        if (s.status === "expired" || s.status === "unknown" || Date.now() > code.expiresAt) {
+          setExpired(true);
+          setCode(null);
+        }
+      } catch {
+        /* coupure passagère : on réessaie au prochain tour */
       }
     }, 2000);
     return () => {
@@ -120,15 +142,28 @@ function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
     <div className="mt-8 grid gap-6 md:grid-cols-[1fr_280px]">
       <div className="rounded-xl border border-line bg-surface p-6">
         <h2 className="text-xl font-bold">Lier mon compte Minecraft</h2>
-        <p className="mt-2 text-sm text-muted">
-          Lie ton compte pour voir ton profil, tes statistiques et recevoir tes achats sans saisir ton pseudo.
-        </p>
+        <p className="mt-2 text-sm text-muted">Lie ton compte pour voir ton grade, tes pièces et tes statistiques sur le site.</p>
+        {!site.launched && (
+          <p className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-warning/10 px-2 py-1 text-xs font-semibold text-warning">
+            <Icon name="clock" size={12} /> Accès anticipé : le serveur n&apos;est pas encore ouvert à tous.
+          </p>
+        )}
+
+        {error && (
+          <p className="mt-4 flex items-center gap-2 rounded-lg border border-error/40 bg-error/10 p-3 text-sm text-error">
+            <Icon name="warning-diamond" size={18} /> {error}
+          </p>
+        )}
 
         {!code ? (
           <>
-            {expired && <p className="mt-4 flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning"><Icon name="warning-diamond" size={18} /> Le code a expiré. Génère-en un nouveau.</p>}
-            <button onClick={generate} className="btn-bloc mt-6 rounded-lg bg-gradient-brand px-6 py-3 font-bold text-white">
-              Générer mon code
+            {expired && (
+              <p className="mt-4 flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
+                <Icon name="warning-diamond" size={18} /> Le code a expiré. Génère-en un nouveau.
+              </p>
+            )}
+            <button onClick={generate} disabled={busy} className="btn-bloc mt-6 rounded-lg bg-gradient-brand px-6 py-3 font-bold text-white disabled:opacity-60">
+              {busy ? "Génération…" : "Générer mon code"}
             </button>
           </>
         ) : (
@@ -139,7 +174,9 @@ function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
                 {command}
               </code>
               <button onClick={copy} className="btn-bloc rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm font-semibold">
-                <span className="inline-flex items-center gap-1.5"><Icon name={copied ? "check" : "copy"} size={16} /> {copied ? "Copié" : "Copier"}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name={copied ? "check" : "copy"} size={16} /> {copied ? "Copié" : "Copier"}
+                </span>
               </button>
             </div>
             <div className="mt-4 flex items-center justify-between text-sm">
@@ -150,9 +187,9 @@ function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
                 Expire dans <strong className="font-mono">{mm}:{ss}</strong>
               </span>
             </div>
-            <button onClick={generate} className="mt-3 text-xs text-muted hover:text-text">Générer un autre code</button>
-
-            {process.env.NODE_ENV !== "production" && <DevSimulator code={code.code} />}
+            <button onClick={generate} className="mt-3 text-xs text-muted hover:text-text">
+              Générer un autre code
+            </button>
           </div>
         )}
       </div>
@@ -166,88 +203,105 @@ function LinkFlow({ onLinked }: { onLinked: (a: LinkedAccount) => void }) {
           <li><span className="font-bold text-primary">4.</span> Cette page se met à jour toute seule.</li>
         </ol>
         <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
-          <Icon name="info-box" size={14} className="mr-1 -mt-0.5 text-primary" /><span className="font-mono">/lier</span> sert à lier ton compte <strong>Discord</strong>, pas le site.
+          <Icon name="info-box" size={14} className="-mt-0.5 mr-1 text-primary" />
+          <span className="font-mono">/lier</span> sert à lier ton compte <strong>Discord</strong>, pas le site.
         </p>
       </aside>
     </div>
   );
 }
 
-/** Visible uniquement en développement : remplace le joueur qui tape la commande en jeu. */
-function DevSimulator({ code }: { code: string }) {
-  const [name, setName] = useState("Steve");
-  return (
-    <div className="mt-6 rounded-lg border border-dashed border-warning/50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-warning">Mode dev · simuler la commande en jeu</p>
-      <div className="mt-2 flex gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-line bg-bg-2 px-3 py-2 font-mono text-sm"
-          aria-label="Pseudo simulé"
-        />
-        <button
-          disabled={!isValidUsername(name)}
-          onClick={() => simulateInGameCommand(code, name)}
-          className="rounded bg-warning px-3 py-2 text-sm font-bold text-bg disabled:opacity-50"
-        >
-          Simuler {site.linkCommand}
-        </button>
-      </div>
-    </div>
-  );
-}
+function Profile({ account, onUpdate, onUnlink }: { account: LinkedAccount; onUpdate: (a: LinkedAccount) => void; onUnlink: () => void }) {
+  const p = account.profile;
+  const color = RANK_COLORS[p?.rank.id ?? "joueur"] ?? RANK_COLORS.joueur;
 
-function Profile({ account, onUnlink }: { account: LinkedAccount; onUnlink: () => void }) {
+  // Juste après la liaison, le serveur envoie le profil en quelques secondes : on le guette.
+  useEffect(() => {
+    if (p) return;
+    const id = setInterval(async () => {
+      try {
+        const s = await getLinkStatus();
+        if (s.status === "linked" && s.account.profile) onUpdate(s.account);
+      } catch {
+        /* réessai au prochain tour */
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [p, onUpdate]);
+
   return (
     <div className="mt-8 space-y-6">
       <div className="flex flex-col items-center gap-6 rounded-xl border border-line bg-surface p-6 sm:flex-row">
         <Image
-          src={`https://mc-heads.net/body/${account.username}/120`}
-          alt={`Skin de ${account.username}`}
+          src={`https://mc-heads.net/body/${encodeURIComponent(account.name)}/120`}
+          alt={`Skin de ${account.name}`}
           width={60}
           height={120}
           className="h-[120px] w-auto"
           unoptimized
         />
         <div className="flex-1 text-center sm:text-left">
-          <p className="font-mono text-sm">
-            <span className="text-dim">[</span>
-            <span style={{ color: account.rankColor }}>{account.rank}</span>
-            <span className="text-dim">]</span>
+          {p && (
+            <p className="font-mono text-sm">
+              <span className="text-dim">[</span>
+              <span style={{ color }}>{p.rank.name}</span>
+              <span className="text-dim">]</span>
+            </p>
+          )}
+          <h2 className="font-display text-3xl">{account.name}</h2>
+          <p className="mt-1 flex items-center justify-center gap-1 text-sm text-success sm:justify-start">
+            <Icon name="check" size={16} /> Compte lié le {new Date(account.linkedAt).toLocaleDateString("fr-FR")}
           </p>
-          <h2 className="font-display text-3xl">{account.username}</h2>
-          <p className="mt-1 flex items-center justify-center gap-1 text-sm text-success sm:justify-start"><Icon name="check" size={16} /> Compte lié le {new Date(account.linkedAt).toLocaleDateString("fr-FR")}</p>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="rounded-lg bg-bg-2 px-4 py-3">
-            <p className="font-display text-2xl text-accent">{formatNumber(account.coins)}</p>
-            <p className="text-xs text-muted">pièces</p>
+        {p && (
+          <div className="grid grid-cols-2 gap-3 text-center">
+            <div className="rounded-lg bg-bg-2 px-4 py-3">
+              <p className="font-display text-2xl text-accent">{formatNumber(p.coins)}</p>
+              <p className="text-xs text-muted">pièces</p>
+            </div>
+            <div className="rounded-lg bg-bg-2 px-4 py-3">
+              <p className="font-display text-2xl text-primary">{p.level}</p>
+              <p className="text-xs text-muted">niveau</p>
+            </div>
           </div>
-          <div className="rounded-lg bg-bg-2 px-4 py-3">
-            <p className="font-display text-2xl text-primary">{account.level}</p>
-            <p className="text-xs text-muted">niveau</p>
-          </div>
-        </div>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {account.stats.map((s) => (
-          <div key={s.game} className="rounded-xl border border-line bg-surface p-5">
-            <p className="font-semibold">{s.game}</p>
-            <p className="mt-2 text-2xl font-bold">{formatNumber(s.wins)} <span className="text-sm font-normal text-muted">victoires</span></p>
-            {s.elo && <p className="text-sm text-muted">ELO <span className="text-primary">{s.elo}</span></p>}
-          </div>
-        ))}
-      </div>
+      {p ? (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {p.stats.map((s) => (
+            <div key={s.game} className="rounded-xl border border-line bg-surface p-5">
+              <p className="font-semibold">{s.game}</p>
+              <p className="mt-2 text-2xl font-bold">
+                {formatNumber(s.wins)} <span className="text-sm font-normal text-muted">victoire{s.wins > 1 ? "s" : ""}</span>
+              </p>
+              {s.elo !== undefined && (
+                <p className="text-sm text-muted">
+                  ELO 3v3 <span className="text-primary">{s.elo}</span>
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="flex items-center gap-2 rounded-xl border border-line bg-surface p-5 text-sm text-muted">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-primary" /> Synchronisation de ton profil avec le serveur…
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/boutique" className="btn-bloc rounded-lg bg-accent px-5 py-3 font-bold text-bg">Aller à la boutique</Link>
+        <Link href="/boutique" className="btn-bloc rounded-lg bg-accent px-5 py-3 font-bold text-bg">
+          Aller à la boutique
+        </Link>
         <button onClick={onUnlink} className="rounded-lg border border-line px-5 py-3 text-sm text-muted hover:border-error hover:text-error">
           Délier ce compte
         </button>
       </div>
-      <p className="flex items-center gap-1 text-xs text-warning"><Icon name="warning-diamond" size={14} /> Données de démonstration : le profil réel sera chargé depuis le serveur une fois le backend branché.</p>
+      {p && (
+        <p className="text-xs text-muted">
+          Mis à jour {new Date(p.updatedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · actualisé toutes les 5 minutes par le serveur.
+        </p>
+      )}
     </div>
   );
 }

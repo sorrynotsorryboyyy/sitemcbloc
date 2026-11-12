@@ -9,7 +9,7 @@ import { useCart, type CartItem } from "@/lib/cart";
 import { formatEuro, isValidUsername } from "@/lib/format";
 import { checkout } from "@/lib/services/shop";
 import Icon from "@/components/Icon";
-import { getLinkedAccount } from "@/lib/services/link";
+import { getCachedAccount } from "@/lib/services/link";
 
 type Done = { orderId: string; username: string; items: CartItem[]; total: number };
 
@@ -23,9 +23,9 @@ function PaiementContent() {
   const [done, setDone] = useState<Done | null>(null);
 
   useEffect(() => {
-    const acc = getLinkedAccount();
+    const acc = getCachedAccount();
     if (acc) {
-      setUsername(acc.username);
+      setUsername(acc.name);
       setLinked(true);
     }
   }, []);

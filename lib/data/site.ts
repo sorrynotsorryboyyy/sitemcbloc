@@ -8,6 +8,13 @@ export const site = {
    * Passer à true le jour de l'ouverture (une fois le backend de paiement branché).
    */
   launched: false as boolean,
+  /**
+   * Liaison du compte Minecraft au site (/site WEB-XXXXXX en jeu), indépendante de l'ouverture :
+   * activée dès maintenant pour les tests du staff. La boutique, elle, suit « launched ».
+   */
+  linking: true as boolean,
+  /** API publique du bot Discord (Railway), intermédiaire entre le site et le serveur. */
+  botApi: process.env.NEXT_PUBLIC_BOT_URL || "https://mcblocdidi-production.up.railway.app",
   // Infos publiques : data/network.json (source unique partagée avec le bot et le plugin)
   name: network.name,
   tagline: network.tagline,
