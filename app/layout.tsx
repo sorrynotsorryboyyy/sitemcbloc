@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Pixelify_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,8 +7,22 @@ import CartToast from "@/components/CartToast";
 import { CartProvider } from "@/lib/cart";
 import { site } from "@/lib/data/site";
 
-const body = Outfit({ variable: "--font-body", subsets: ["latin"] });
-const pixel = Pixelify_Sans({ variable: "--font-pixel", subsets: ["latin"], weight: ["500", "700"] });
+// Polices hébergées dans le projet (sous-ensemble latin, accents français inclus) :
+// le build ne dépend plus de Google Fonts, dont les réponses ont fait échouer un déploiement Vercel.
+const body = localFont({
+  src: "./fonts/outfit-latin.woff2",
+  weight: "100 900",
+  variable: "--font-body",
+  display: "swap",
+});
+const pixel = localFont({
+  src: [
+    { path: "./fonts/pixelify-sans-500-latin.woff2", weight: "500" },
+    { path: "./fonts/pixelify-sans-700-latin.woff2", weight: "700" },
+  ],
+  variable: "--font-pixel",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
