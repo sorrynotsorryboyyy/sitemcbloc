@@ -52,7 +52,7 @@ export default function GameCard({ game, reverse = false }: { game: Game; revers
         <p className="mt-3 text-base leading-relaxed text-text/90">{game.description}</p>
         <ul className="mt-5 flex flex-wrap gap-2">
           {game.features.map((f) => (
-            <li key={f} className="flex items-center gap-1.5 rounded-md border border-line bg-bg-2 px-2.5 py-1.5 text-xs text-muted">
+            <li key={f} className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs text-text/90" style={{ borderColor: `${game.color}40`, background: `${game.color}12` }}>
               <Icon name="check" size={14} style={{ color: game.color }} /> {f}
             </li>
           ))}

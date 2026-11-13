@@ -28,7 +28,6 @@ export default function Footer() {
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text">Communauté</h3>
           <ul className="space-y-2 text-sm text-muted">
             <li><a className="hover:text-primary" href={site.discord} target="_blank" rel="noreferrer">Discord</a></li>
-            <li><Link className="hover:text-primary" href="/#faq">FAQ</Link></li>
             <li><Link className="hover:text-primary" href="/regles">Règles</Link></li>
           </ul>
         </div>

@@ -11,6 +11,9 @@ export default function ComptePage() {
     <div className="mx-auto max-w-4xl px-4 py-12">
       <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">Mon compte</p>
       <h1 className="font-display text-4xl sm:text-5xl">Ton compte MCBloc</h1>
+      <p className="mt-3 max-w-2xl text-muted">
+        Lie ton compte Minecraft pour retrouver ton grade, tes pièces et tes statistiques. Tes achats sont livrés directement sur ton compte.
+      </p>
       <Account />
     </div>
   );

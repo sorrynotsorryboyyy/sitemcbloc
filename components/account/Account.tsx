@@ -142,7 +142,6 @@ function LinkFlow({ onLinked, initialError }: { onLinked: (a: LinkedAccount) => 
     <div className="mt-8 grid gap-6 md:grid-cols-[1fr_280px]">
       <div className="rounded-xl border border-line bg-surface p-6">
         <h2 className="text-xl font-bold">Lier mon compte Minecraft</h2>
-        <p className="mt-2 text-sm text-muted">Lie ton compte pour voir ton grade, tes pièces et tes statistiques sur le site.</p>
         {!site.launched && (
           <p className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-warning/10 px-2 py-1 text-xs font-semibold text-warning">
             <Icon name="clock" size={12} /> Accès anticipé : le serveur n&apos;est pas encore ouvert à tous.
