@@ -4,7 +4,7 @@ import { useState } from "react";
 import { site } from "@/lib/data/site";
 import Icon from "@/components/Icon";
 
-export default function CopyIpButton({ size = "lg" }: { size?: "lg" | "md" }) {
+export default function CopyIpButton({ size = "lg" }: { size?: "lg" | "md" | "sm" }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -17,7 +17,15 @@ export default function CopyIpButton({ size = "lg" }: { size?: "lg" | "md" }) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  const pad = size === "lg" ? "px-6 py-4 text-lg" : "px-4 py-3 text-base";
+  const pad = size === "lg" ? "px-6 py-4 text-lg" : size === "md" ? "px-4 py-3 text-base" : "h-10 px-3 text-sm";
+  if (size === "sm") {
+    return (
+      <button onClick={copy} className={`btn-bloc inline-flex items-center gap-2 rounded-md bg-gradient-brand font-bold text-white ${pad}`} aria-live="polite" aria-label="Copier l'adresse du serveur">
+        <Icon name={copied ? "check" : "copy"} size={16} />
+        <span className="hidden font-mono sm:inline">{copied ? "Copié !" : site.ip}</span>
+      </button>
+    );
+  }
 
   return (
     <button

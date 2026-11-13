@@ -5,7 +5,7 @@
   "brand": "MCBLOC",
   "tagline": "Réseau de mini-jeux",
   "slogan": "Le réseau de mini-jeux qui fait des vagues.",
-  "description": "MCBloc, le réseau Minecraft de mini-jeux : Piggy Wars, SumoGames, CoreWars. Classement ELO, pass saisonnier, cosmétiques et défis quotidiens.",
+  "description": "MCBloc, le réseau Minecraft de mini-jeux : Piggy Wars, SumoGames et CoreWars. Parties rapides, classements et cosmétiques.",
   "ip": "play.mcbloc.fr",
   "port": 25565,
   "versions": "1.8 – 1.21",

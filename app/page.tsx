@@ -37,7 +37,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-bg/80 md:bg-transparent md:bg-gradient-to-r md:from-bg/95 md:via-bg/75 md:to-bg/35" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-bg" aria-hidden />
         <div className="absolute -top-40 left-1/4 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-secondary/25 blur-[120px]" aria-hidden />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-[1.1fr_1fr] md:py-20">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-6 px-4 py-10 md:grid-cols-[1.1fr_1fr] md:gap-10 md:py-20">
           <div className="order-2 text-center md:order-1 md:text-left">
             <ServerStatus />
             <h1 className="mt-6 font-display text-4xl leading-tight sm:text-5xl lg:text-6xl">
@@ -55,7 +55,7 @@ export default function Home() {
               width={460}
               height={460}
               priority
-              className="animate-float h-auto w-64 drop-shadow-[0_20px_60px_rgba(0,114,255,0.45)] sm:w-80 md:w-full md:max-w-[460px]"
+              className="animate-float h-auto w-40 drop-shadow-[0_20px_60px_rgba(0,114,255,0.45)] sm:w-80 md:w-full md:max-w-[460px]"
             />
           </div>
         </div>

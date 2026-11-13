@@ -36,8 +36,8 @@ export const metadata: Metadata = {
     siteName: "MCBloc",
     locale: "fr_FR",
     type: "website",
-    images: [{ url: "/logo.png", width: 1254, height: 1254, alt: "Logo MCBloc" }],
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = { themeColor: "#070b14" };

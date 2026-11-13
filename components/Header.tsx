@@ -7,6 +7,7 @@ import { useState } from "react";
 import { nav, site } from "@/lib/data/site";
 import { useCart } from "@/lib/cart";
 import Icon from "@/components/Icon";
+import CopyIpButton from "@/components/CopyIpButton";
 
 export default function Header() {
   const pathname = usePathname();
@@ -38,6 +39,20 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {site.launched ? (
+            <CopyIpButton size="sm" />
+          ) : (
+            <a
+              href={site.discord}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-bloc flex h-10 items-center gap-2 rounded-md bg-[#5865F2] px-3 text-sm font-bold text-white"
+              aria-label="Rejoindre le Discord"
+            >
+              <Icon name="discord-solid" size={20} />
+              <span className="hidden sm:inline">Discord</span>
+            </a>
+          )}
           {site.launched && (
             <Link
               href="/boutique/panier"
