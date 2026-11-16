@@ -3,7 +3,10 @@ import { network } from "@/lib/data/network";
 export type Rank = {
   id: string;
   name: string;
-  price: number;
+  /** 30 jours de grade (qui s'ajoutent si on rachète). */
+  priceMonthly: number;
+  /** Grade à vie. */
+  priceLifetime: number;
   color: string;
   bonus: string;
   includes?: string;

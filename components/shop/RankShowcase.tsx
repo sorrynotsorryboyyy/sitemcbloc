@@ -5,10 +5,9 @@ import { useState } from "react";
 import SkinViewer from "@/components/shop/SkinViewer";
 import RankEmblem from "@/components/shop/RankEmblem";
 import Icon from "@/components/Icon";
-import BuyButton from "@/components/shop/BuyButton";
+import RankPurchase from "@/components/shop/RankPurchase";
 import { ranks } from "@/lib/data/ranks";
 import { showcase } from "@/lib/data/site";
-import { formatEuro } from "@/lib/format";
 
 /** Vitrine des grades : personnage 3D + pseudo coloré + sélecteur de grade. */
 export default function RankShowcase({ showCompareLink = true }: { showCompareLink?: boolean }) {
@@ -85,12 +84,8 @@ export default function RankShowcase({ showCompareLink = true }: { showCompareLi
             {rank.perks.length > 5 && <li className="pl-7 text-muted">+ {rank.perks.length - 5} autres avantages</li>}
           </ul>
 
-          <div className="mt-6 flex flex-wrap items-end justify-between gap-4 border-t border-line pt-5">
-            <div>
-              <p className="text-3xl font-bold">{formatEuro(rank.price)}</p>
-              <p className="text-xs text-muted">paiement unique · grade à vie</p>
-            </div>
-            <BuyButton item={{ id: `rank-${rank.id}`, name: `Grade ${rank.name}`, category: "Grade", price: rank.price, color: rank.color }} className="px-5 py-3" style={{ background: rank.color }} />
+          <div className="mt-6 border-t border-line pt-5">
+            <RankPurchase rank={rank} />
           </div>
           {showCompareLink && (
             <Link href="/boutique#grades" className="mt-4 text-sm font-semibold text-primary hover:underline">

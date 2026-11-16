@@ -5,7 +5,7 @@
   "brand": "MCBLOC",
   "tagline": "Réseau de mini-jeux",
   "slogan": "Le réseau de mini-jeux qui fait des vagues.",
-  "description": "MCBloc, le réseau Minecraft de mini-jeux : Piggy Wars, SumoGames et CoreWars. Parties rapides, classements et cosmétiques.",
+  "description": "MCBloc, le réseau Minecraft de mini-jeux : Piggy Wars, SumoGames, CoreWars et WildFarm. Parties rapides, classements et cosmétiques.",
   "ip": "play.mcbloc.fr",
   "port": 25565,
   "versions": "1.8 – 1.21",
@@ -59,13 +59,25 @@
       "mode": "Rouge vs Bleu · jusqu'à 10v10",
       "description": "Construis, défends et détruis le cœur de la base ennemie. Générateurs d'or, 7 classes et de grosses batailles d'équipe.",
       "features": ["7 classes", "Générateurs d'or", "Grandes équipes"]
+    },
+    {
+      "id": "wildfarm",
+      "name": "WildFarm",
+      "server": "wildfarm",
+      "emoji": "🧟",
+      "color": "#8bc34a",
+      "mode": "Raids d'extraction · ouvert 24h/24",
+      "description": "Pars de ton île, pille une grande map infestée de zombies, survis aux autres joueurs… puis rejoins une extraction pour garder ton butin.",
+      "features": ["Île personnelle", "Zombies à capacités", "Butin rare"]
     }
   ],
+  "$ranksComment": "Grades : priceMonthly = 30 jours (qui s'ajoutent si on rachète), priceLifetime = à vie. Mêmes prix sur le site, en jeu (/grades) et sur Discord.",
   "ranks": [
     {
       "id": "starter",
       "name": "Starter",
-      "price": 3.99,
+      "priceMonthly": 2.99,
+      "priceLifetime": 9.99,
       "color": "#ffb38a",
       "bonus": "+10 %",
       "perks": ["Préfixe [Starter] et pseudo coloré", "+10 % de pièces et d'XP", "Titre « Starter »"]
@@ -73,7 +85,8 @@
     {
       "id": "vip",
       "name": "VIP",
-      "price": 7.99,
+      "priceMonthly": 4.99,
+      "priceLifetime": 19.99,
       "color": "#4dd2ff",
       "bonus": "+25 %",
       "includes": "Starter",
@@ -92,7 +105,8 @@
     {
       "id": "vipplus",
       "name": "VIP+",
-      "price": 12.99,
+      "priceMonthly": 7.99,
+      "priceLifetime": 34.99,
       "color": "#f5c518",
       "bonus": "+50 %",
       "includes": "VIP",
@@ -101,7 +115,8 @@
     {
       "id": "legende",
       "name": "Légende",
-      "price": 19.99,
+      "priceMonthly": 11.99,
+      "priceLifetime": 54.99,
       "color": "#ff5fd2",
       "bonus": "+75 %",
       "includes": "VIP+",

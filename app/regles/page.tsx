@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Icon from "@/components/Icon";
 import { network, type RuleScope } from "@/lib/data/network";
 
@@ -21,6 +22,10 @@ export default function ReglesPage() {
       </h1>
       <p className="mt-3 text-muted">
         Pour que tout le monde passe un bon moment, en jeu comme sur le Discord. En te connectant au serveur, tu acceptes ces règles.
+      </p>
+      <p className="mt-2 text-sm text-muted">
+        Les règles de chaque jeu (déroulé, dégâts, chances, prix) sont dans le{" "}
+        <Link href="/guide" className="font-semibold text-primary hover:underline">guide</Link>.
       </p>
 
       <ol className="mt-10 space-y-3">

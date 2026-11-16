@@ -1,10 +1,9 @@
 "use client";
 
 import type { Rank } from "@/lib/data/ranks";
-import { formatEuro } from "@/lib/format";
 import Icon from "@/components/Icon";
 import TiltCard from "@/components/TiltCard";
-import BuyButton from "@/components/shop/BuyButton";
+import RankPurchase from "@/components/shop/RankPurchase";
 import RankEmblem from "@/components/shop/RankEmblem";
 
 export default function RankCard({ rank, compact = false }: { rank: Rank; compact?: boolean }) {
@@ -39,10 +38,6 @@ export default function RankCard({ rank, compact = false }: { rank: Rank; compac
             <span style={{ color: rank.color }}>{rank.name}</span>
             <span className="text-dim">]</span> <span className="text-muted">Pseudo</span>
           </p>
-          <div className="mt-4 flex items-baseline gap-2">
-            <p className="text-3xl font-bold">{formatEuro(rank.price)}</p>
-            <p className="text-xs text-muted">à vie</p>
-          </div>
           <p className="mt-1 inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-bold" style={{ color: rank.color, background: `${rank.color}1a` }}>
             <Icon name="trending-up" size={14} /> {rank.bonus} de pièces et d&apos;XP
           </p>
@@ -63,7 +58,9 @@ export default function RankCard({ rank, compact = false }: { rank: Rank; compac
           </ul>
         )}
 
-        <BuyButton item={{ id: `rank-${rank.id}`, name: `Grade ${rank.name}`, category: "Grade", price: rank.price, color: rank.color }} className="relative mt-5 py-3" style={{ background: rank.color }} />
+        <div className="relative mt-5">
+          <RankPurchase rank={rank} />
+        </div>
       </article>
     </TiltCard>
   );

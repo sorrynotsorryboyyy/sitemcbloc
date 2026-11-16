@@ -21,6 +21,7 @@ npm run build    # build de production
 | `/boutique/panier` | Panier (sauvegardé dans le navigateur) |
 | `/boutique/paiement` | Pseudo + CGV + paiement **simulé** → confirmation |
 | `/compte` | Liaison du compte via `/site WEB-XXXXXX` en jeu, puis profil |
+| `/guide`, `/guide/<section>` | Guide des jeux (règles, commandes, chiffres) : envoyé par le serveur Minecraft, lu chez le bot (`/public/guide`, toutes les 5 min) |
 
 `boutique.mcbloc.fr` redirige vers `mcbloc.fr/boutique` (voir `next.config.ts`).
 
@@ -29,7 +30,7 @@ npm run build    # build de production
 - Couleurs (charte `Theme.java`) : `app/globals.css` (`@theme`)
 - IP, Discord, commande de liaison : `lib/data/site.ts`
 - Jeux, FAQ : `lib/data/games.ts`
-- Grades : `lib/data/ranks.ts` · Packs de pièces : `lib/data/coins.ts` · Boosters : `lib/data/boosters.ts`
+- Grades (prix 30 jours et à vie, avantages) : `data/network.json` — mêmes prix en jeu (/grades) et sur Discord · Packs de pièces : `lib/data/coins.ts` · Boosters : `lib/data/boosters.ts`
 - Cosmétiques et coffres (copie de `cosmetics.yml`) : `lib/data/cosmetics.ts`
 
 ## Brancher le backend

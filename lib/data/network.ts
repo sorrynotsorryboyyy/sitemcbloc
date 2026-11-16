@@ -19,7 +19,10 @@ export type NetworkGame = {
 export type NetworkRank = {
   id: string;
   name: string;
-  price: number;
+  /** Prix de 30 jours de grade (qui s'ajoutent si on rachète). */
+  priceMonthly: number;
+  /** Prix du grade à vie. */
+  priceLifetime: number;
   color: string;
   bonus: string;
   includes?: string;
