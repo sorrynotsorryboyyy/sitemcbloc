@@ -10,7 +10,7 @@ import Icon from "@/components/Icon";
 import { games } from "@/lib/data/games";
 import { coinPacks } from "@/lib/data/coins";
 import { boosters } from "@/lib/data/boosters";
-import { cosmetics } from "@/lib/data/cosmetics";
+import { getCatalog } from "@/lib/services/cosmetics";
 import TiltCard from "@/components/TiltCard";
 import RankShowcase from "@/components/shop/RankShowcase";
 import { SpinningCoin, Visual } from "@/components/shop/Visual";
@@ -21,13 +21,19 @@ import { formatEuro, formatNumber } from "@/lib/format";
 /** Fond du hero : capture en jeu (map CoreWars), sans texte. */
 const BANNER = "/images/corewars.png";
 
-const shopTiles: { href: string; title: string; text: string; from: string; color: string; icon: IconName; coin?: boolean; image?: string }[] = [
+function shopTiles(cheapestCosmetic: number | null): { href: string; title: string; text: string; from: string; color: string; icon: IconName; coin?: boolean; image?: string }[] {
+  return [
   { href: "/boutique#pieces", title: "Pièces", text: "Recharge ton solde", from: `dès ${formatEuro(Math.min(...coinPacks.map((p) => p.price)))}`, color: "#ffd84d", icon: "coins", coin: true },
-  { href: "/boutique#cosmetiques", title: "Cosmétiques", text: "Coffres, familiers, effets…", from: `dès ${formatNumber(Math.min(...cosmetics.map((c) => c.price)))} pièces`, color: "#b36bff", icon: "sparkles", image: "/shop/cosmetics.svg" },
+  { href: "/boutique#cosmetiques", title: "Cosmétiques", text: "Coffres, familiers, effets…", from: cheapestCosmetic === null ? "avec tes pièces" : `dès ${formatNumber(cheapestCosmetic)} pièces`, color: "#b36bff", icon: "sparkles", image: "/shop/cosmetics.svg" },
   { href: "/boutique#boosters", title: "Boosters", text: "Double tes gains", from: `dès ${formatEuro(Math.min(...boosters.map((b) => b.price)))}`, color: "#00c6ff", icon: "zap", image: "/shop/boost-combo.svg" },
-];
+  ];
+}
 
-export default function Home() {
+export const revalidate = 300;
+
+export default async function Home() {
+  const prices = (await getCatalog()).cosmetics.map((c) => c.price).filter((p): p is number => p !== null);
+  const tiles = shopTiles(prices.length ? Math.min(...prices) : null);
   return (
     <>
       {/* HERO */}
@@ -80,7 +86,7 @@ export default function Home() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
           <RankShowcase />
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            {shopTiles.map((t) => (
+            {tiles.map((t) => (
               <TiltCard key={t.href} glow={t.color}>
                 <Link
                   href={t.href}

@@ -3,13 +3,18 @@ import Image from "next/image";
 import Shop from "@/components/shop/Shop";
 import LaunchNotice from "@/components/LaunchNotice";
 import { site } from "@/lib/data/site";
+import { getCatalog } from "@/lib/services/cosmetics";
+
+// Catalogue des cosmétiques et coffres : lu chez le serveur (via le bot), rafraîchi toutes les 5 minutes.
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Boutique",
   description: "Grades, pièces, cosmétiques et boosters MCBloc. Soutiens le serveur et brille en jeu.",
 };
 
-export default function BoutiquePage() {
+export default async function BoutiquePage() {
+  const catalog = await getCatalog();
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       <header className="relative -mx-4 mb-8 overflow-hidden px-4 py-10 sm:mx-0 sm:rounded-2xl sm:px-8">
@@ -32,7 +37,7 @@ export default function BoutiquePage() {
           </LaunchNotice>
         </div>
       )}
-      <Shop />
+      <Shop catalog={catalog} />
     </div>
   );
 }

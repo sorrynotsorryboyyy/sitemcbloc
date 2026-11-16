@@ -10,7 +10,9 @@ import Icon, { type IconName } from "@/components/Icon";
 import RarityBadge from "@/components/RarityBadge";
 import { ranks, rankComparison } from "@/lib/data/ranks";
 import { coinPacks } from "@/lib/data/coins";
-import { cosmetics, cosmeticTypes, crates, rarities, type CosmeticType, type Rarity } from "@/lib/data/cosmetics";
+import { cosmeticTypes, crateVisuals, rarities, type CosmeticType, type Rarity } from "@/lib/data/cosmetics";
+import type { Catalog } from "@/lib/services/cosmetics";
+import ItemIcon from "@/components/shop/ItemIcon";
 import { boosters, paidKits } from "@/lib/data/boosters";
 import { formatEuro, formatNumber } from "@/lib/format";
 
@@ -23,7 +25,7 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
-export default function Shop() {
+export default function Shop({ catalog }: { catalog: Catalog }) {
   const [tab, setTab] = useState<TabId>("grades");
 
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function Shop() {
 
       {tab === "grades" && <RanksTab />}
       {tab === "pieces" && <CoinsTab />}
-      {tab === "cosmetiques" && <CosmeticsTab />}
+      {tab === "cosmetiques" && <CosmeticsTab catalog={catalog} />}
       {tab === "boosters" && <BoostersTab />}
     </>
   );
@@ -164,9 +166,11 @@ function CoinsTab() {
   );
 }
 
-function CosmeticsTab() {
+function CosmeticsTab({ catalog }: { catalog: Catalog }) {
   const [type, setType] = useState<CosmeticType | "ALL">("ALL");
-  const list = type === "ALL" ? cosmetics : cosmetics.filter((c) => c.type === type);
+  const [rarity, setRarity] = useState<Rarity | "ALL">("ALL");
+  const types = (Object.keys(cosmeticTypes) as CosmeticType[]).filter((t) => catalog.cosmetics.some((c) => c.type === t));
+  const list = catalog.cosmetics.filter((c) => (type === "ALL" || c.type === type) && (rarity === "ALL" || c.rarity === rarity));
 
   return (
     <div>
@@ -176,65 +180,96 @@ function CosmeticsTab() {
         <a href="#pieces" className="font-semibold text-accent hover:underline">Recharge ton solde</a>.
       </div>
 
-      <h2 className="mb-4 font-display text-2xl">Coffres mystères</h2>
-      <div className="mb-12 grid gap-5 md:grid-cols-3">
-        {crates.map((c, i) => {
-          const tone = [rarities.RARE.color, rarities.EPIC.color, rarities.LEGENDARY.color][i] ?? rarities.RARE.color;
-          return (
-          <TiltCard key={c.id} glow={tone}>
-          <article className="h-full rounded-xl border-2 bg-surface p-5" style={{ borderColor: `${tone}40` }}>
-            <div className="flex h-28 items-center justify-center rounded-lg" style={{ color: tone, background: `radial-gradient(circle at 50% 60%, ${tone}33, transparent 70%)` }}>
-              <Visual image={c.image} icon={c.icon} size={c.image ? 96 : 56} float />
-            </div>
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <h3 className="text-lg font-bold">{c.name}</h3>
-              <span className="flex items-center gap-1.5 font-bold text-accent"><SpinningCoin size={20} /> {formatNumber(c.price)}</span>
-            </div>
-            <div className="mt-3 flex h-2 overflow-hidden rounded-full">
-              {(Object.entries(c.odds) as [Rarity, number][]).map(([r, pct]) => (
-                <div key={r} style={{ width: `${pct}%`, background: rarities[r].color }} title={`${rarities[r].label} ${pct} %`} />
-              ))}
-            </div>
-            <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
-              {(Object.entries(c.odds) as [Rarity, number][]).map(([r, pct]) => (
-                <li key={r}>
-                  <span style={{ color: rarities[r].color }}>■</span> {rarities[r].label} {pct} %
-                </li>
-              ))}
-            </ul>
-          </article>
-          </TiltCard>
-          );
-        })}
-      </div>
+      {catalog.cosmetics.length === 0 ? (
+        <div className="rounded-xl border border-line bg-surface p-6 text-muted">
+          Le catalogue se charge depuis le serveur : reviens dans quelques minutes.
+        </div>
+      ) : (
+        <>
+          {catalog.crates.length > 0 && (
+            <>
+              <h2 className="mb-4 font-display text-2xl">Coffres mystères</h2>
+              <div className="mb-12 grid gap-5 md:grid-cols-3">
+                {catalog.crates.map((c, i) => {
+                  const tone = [rarities.RARE.color, rarities.EPIC.color, rarities.LEGENDARY.color][i] ?? rarities.RARE.color;
+                  const visual = crateVisuals[c.id] ?? { icon: "box" as const };
+                  return (
+                    <TiltCard key={c.id} glow={tone}>
+                      <article className="h-full rounded-xl border-2 bg-surface p-5" style={{ borderColor: `${tone}40` }}>
+                        <div className="flex h-28 items-center justify-center rounded-lg" style={{ color: tone, background: `radial-gradient(circle at 50% 60%, ${tone}33, transparent 70%)` }}>
+                          <Visual image={visual.image} icon={visual.icon} size={visual.image ? 96 : 56} float />
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <h3 className="text-lg font-bold">{c.name}</h3>
+                          {c.price !== null && (
+                            <span className="flex items-center gap-1.5 font-bold text-accent"><SpinningCoin size={20} /> {formatNumber(c.price)}</span>
+                          )}
+                        </div>
+                        <div className="mt-3 flex h-2 overflow-hidden rounded-full">
+                          {(Object.entries(c.odds) as [Rarity, number][]).map(([r, pct]) => (
+                            <div key={r} style={{ width: `${pct}%`, background: rarities[r].color }} title={`${rarities[r].label} ${pct} %`} />
+                          ))}
+                        </div>
+                        <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+                          {(Object.entries(c.odds) as [Rarity, number][]).map(([r, pct]) => (
+                            <li key={r}>
+                              <span style={{ color: rarities[r].color }}>■</span> {rarities[r].label} {String(pct).replace(".", ",")} %
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    </TiltCard>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
-      <h2 className="mb-4 font-display text-2xl">Catalogue</h2>
-      <div className="mb-5 flex flex-wrap gap-2">
-        <FilterChip active={type === "ALL"} onClick={() => setType("ALL")}>Tout</FilterChip>
-        {(Object.keys(cosmeticTypes) as CosmeticType[]).map((t) => (
-          <FilterChip key={t} active={type === t} onClick={() => setType(t)}>
-            <span className="inline-flex items-center gap-1.5"><Icon name={cosmeticTypes[t].icon} size={16} /> {cosmeticTypes[t].label}</span>
-          </FilterChip>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {list.map((c) => (
-          <article
-            key={c.name}
-            className="rounded-xl border bg-surface p-4"
-            style={{ borderColor: `${rarities[c.rarity].color}40`, boxShadow: `inset 0 -40px 60px -40px ${rarities[c.rarity].color}40` }}
-          >
-            <div style={{ color: rarities[c.rarity].color }}><Icon name={cosmeticTypes[c.type].icon} size={30} /></div>
-            <h3 className="mt-2 font-bold">{c.name}</h3>
-            <p className="text-xs text-muted">{cosmeticTypes[c.type].label}</p>
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <RarityBadge rarity={c.rarity} />
-              <span className="text-sm font-semibold text-accent">{formatNumber(c.price)}</span>
-            </div>
-          </article>
-        ))}
-      </div>
-      <p className="mt-4 text-xs text-muted">Aperçu d&apos;une partie du catalogue — plus de 100 cosmétiques sont disponibles en jeu.</p>
+          <h2 className="mb-4 font-display text-2xl">Catalogue <span className="text-base text-muted">({catalog.cosmetics.length})</span></h2>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <FilterChip active={type === "ALL"} onClick={() => setType("ALL")}>Tout</FilterChip>
+            {types.map((t) => (
+              <FilterChip key={t} active={type === t} onClick={() => setType(t)}>
+                <span className="inline-flex items-center gap-1.5"><Icon name={cosmeticTypes[t].icon} size={16} /> {cosmeticTypes[t].label}</span>
+              </FilterChip>
+            ))}
+          </div>
+          <div className="mb-5 flex flex-wrap gap-2">
+            <FilterChip active={rarity === "ALL"} onClick={() => setRarity("ALL")}>Toutes les raretés</FilterChip>
+            {(Object.keys(rarities) as Rarity[]).map((r) => (
+              <FilterChip key={r} active={rarity === r} onClick={() => setRarity(r)}>
+                <span style={{ color: rarities[r].color }}>■</span> {rarities[r].label}
+              </FilterChip>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {list.map((c) => (
+              <article
+                key={c.id}
+                className="flex flex-col rounded-xl border bg-surface p-4"
+                style={{ borderColor: `${rarities[c.rarity].color}40`, boxShadow: `inset 0 -40px 60px -40px ${rarities[c.rarity].color}40` }}
+              >
+                <div className="flex h-14 items-center">
+                  <ItemIcon item={c.icon} fallback={cosmeticTypes[c.type]?.icon ?? "sparkles"} color={rarities[c.rarity].color} size={48} />
+                </div>
+                <h3 className="mt-2 font-bold">{c.name}</h3>
+                <p className="text-xs text-muted">{cosmeticTypes[c.type]?.label ?? c.type}</p>
+                <p className="mt-2 flex-1 text-xs text-dim">{c.obtain}</p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <RarityBadge rarity={c.rarity} />
+                  {c.price !== null ? (
+                    <span className="flex items-center gap-1 text-sm font-semibold text-accent"><SpinningCoin size={16} /> {formatNumber(c.price)}</span>
+                  ) : (
+                    <span className="text-right text-xs font-semibold text-muted">{c.priceLabel}</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+          {list.length === 0 && <p className="text-sm text-muted">Aucun cosmétique avec ces filtres.</p>}
+          <p className="mt-6 text-xs text-dim">Icônes : Minecraft Wiki · Minecraft © Mojang. Catalogue à jour avec le serveur.</p>
+        </>
+      )}
     </div>
   );
 }

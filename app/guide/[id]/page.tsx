@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Icon from "@/components/Icon";
-import { getSection, sectionColor, sectionEmoji } from "@/lib/services/guide";
+import { getSection, sectionColor, sectionEmoji, visibleColumns } from "@/lib/services/guide";
 
 export const revalidate = 300;
 
@@ -97,9 +97,9 @@ export default async function GuideSectionPage({ params }: Props) {
             <table className="w-full min-w-[480px] text-sm">
               <thead className="bg-surface-2">
                 <tr>
-                  {t.columns.map((c) => (
-                    <th key={c} className="p-3 text-left font-semibold text-muted">
-                      {c}
+                  {visibleColumns(t).map((i) => (
+                    <th key={t.columns[i]} className="p-3 text-left font-semibold text-muted">
+                      {t.columns[i]}
                     </th>
                   ))}
                 </tr>
@@ -107,9 +107,9 @@ export default async function GuideSectionPage({ params }: Props) {
               <tbody>
                 {t.rows.map((row, i) => (
                   <tr key={i} className="border-t border-line bg-surface odd:bg-bg-2">
-                    {row.map((cell, j) => (
+                    {visibleColumns(t).map((j) => (
                       <td key={j} className={`p-3 align-top ${j === 0 ? "font-semibold" : ""}`}>
-                        {cell}
+                        {row[j]}
                       </td>
                     ))}
                   </tr>

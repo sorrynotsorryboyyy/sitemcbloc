@@ -5,7 +5,8 @@ import LaunchNotice from "@/components/LaunchNotice";
 import TopVoters from "@/components/vote/TopVoters";
 import { SpinningCoin } from "@/components/shop/Visual";
 import { network, voteRewardOf, type VoteReward } from "@/lib/data/network";
-import { crates } from "@/lib/data/cosmetics";
+import { crateVisuals } from "@/lib/data/cosmetics";
+import { getCatalog } from "@/lib/services/cosmetics";
 import { site } from "@/lib/data/site";
 import { formatNumber } from "@/lib/format";
 
@@ -14,10 +15,15 @@ export const metadata: Metadata = {
   description: "Vote pour MCBloc et gagne des pièces et des coffres en jeu. Le launcher partenaire Aevum rapporte encore plus !",
 };
 
-const crateById = Object.fromEntries(crates.map((c) => [c.id, c]));
+/** Coffres : nom donné par le serveur (cosmetics.yml), image du site. */
+type CrateInfo = Record<string, { name: string; image?: string }>;
+
+export const revalidate = 300;
 const pct = (n: number) => `${Math.round(n * 1000) / 10} %`;
 
-export default function VotePage() {
+export default async function VotePage() {
+  const catalog = await getCatalog();
+  const crateById: CrateInfo = Object.fromEntries(catalog.crates.map((c) => [c.id, { name: c.name, image: crateVisuals[c.id]?.image }]));
   const sites = [...network.votes.sites].sort((a, b) => Number(!!b.partner) - Number(!!a.partner));
   const base = network.votes.defaultReward;
 
@@ -75,7 +81,7 @@ export default function VotePage() {
                       Voter sur {s.name} <Icon name="arrow-right" size={16} />
                     </a>
                   </div>
-                  <RewardBox reward={r} highlight={!!s.partner} />
+                  <RewardBox reward={r} highlight={!!s.partner} crateById={crateById} />
                 </div>
               </article>
             );
@@ -138,7 +144,7 @@ export default function VotePage() {
   );
 }
 
-function RewardBox({ reward, highlight }: { reward: VoteReward; highlight: boolean }) {
+function RewardBox({ reward, highlight, crateById }: { reward: VoteReward; highlight: boolean; crateById: CrateInfo }) {
   return (
     <div className={`rounded-xl border p-4 ${highlight ? "border-accent/40 bg-accent/5 md:w-80" : "border-line bg-bg-2"}`}>
       <p className="text-xs font-semibold uppercase tracking-wider text-muted">Récompense par vote</p>

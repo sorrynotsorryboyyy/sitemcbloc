@@ -18,7 +18,12 @@ export type GuideSection = {
   tables: GuideTable[];
 };
 
-const SECTION_EMOJI: Record<string, string> = { reseau: "🌐", progression: "⭐", grades: "💎" };
+const SECTION_EMOJI: Record<string, string> = { reseau: "🌐", progression: "⭐", grades: "💎", cosmetiques: "🎨" };
+
+/** Colonne de données (« _icon »...) : lue par le site, jamais affichée (même règle qu'en jeu et sur Discord). */
+export function visibleColumns(table: GuideTable): number[] {
+  return table.columns.map((c, i) => (c.startsWith("_") ? -1 : i)).filter((i) => i >= 0);
+}
 
 /** Emoji d'une section : celui du jeu (network.json) ou celui des sections du réseau. */
 export function sectionEmoji(id: string): string {
