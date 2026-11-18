@@ -124,7 +124,7 @@
     }
   ],
   "$shopComment": "Boutique : open = paiements actifs (site ET bot). Prix en euros lus par le bot pour créer le paiement Stripe : jamais envoyés par le navigateur. Boosters : effect = coins | xp | combo | network, seconds = durée (jeu actif, sauf network : temps réel).",
-  "shop": { "open": false },
+  "shop": { "open": true },
   "coinPacks": [
     { "id": "coins-1000", "name": "Poignée", "coins": 1000, "bonus": 0, "price": 1.99 },
     { "id": "coins-3000", "name": "Sacoche", "coins": 3000, "bonus": 300, "price": 4.99 },
