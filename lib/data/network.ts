@@ -30,6 +30,19 @@ export type NetworkRank = {
   perks: string[];
 };
 
+export type NetworkCoinPack = { id: string; name: string; coins: number; bonus: number; price: number; tag?: string };
+export type BoosterEffect = "coins" | "xp" | "combo" | "network";
+export type NetworkBooster = {
+  id: string;
+  name: string;
+  effect: BoosterEffect;
+  /** Durée : temps de jeu actif (temps réel pour le booster réseau). */
+  seconds: number;
+  price: number;
+  scope: "perso" | "réseau";
+  description: string;
+};
+
 export type RuleScope = "jeu" | "discord";
 export type NetworkRule = { text: string; where: RuleScope[] };
 
@@ -62,6 +75,10 @@ export type Network = {
   colors: Record<string, string | Record<string, string>>;
   games: NetworkGame[];
   ranks: NetworkRank[];
+  /** Interrupteur unique des paiements (site + bot). */
+  shop: { open: boolean };
+  coinPacks: NetworkCoinPack[];
+  boosters: NetworkBooster[];
   rules: NetworkRule[];
   votes: { sites: VoteSite[]; defaultReward: VoteReward; milestones: VoteMilestone[] };
 };

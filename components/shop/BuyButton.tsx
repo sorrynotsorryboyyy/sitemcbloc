@@ -2,11 +2,11 @@
 
 import Icon from "@/components/Icon";
 import { useCart, type CartItem } from "@/lib/cart";
-import { site } from "@/lib/data/site";
+import { shopOpen } from "@/lib/data/shop";
 
 /**
  * Bouton d'achat de la boutique.
- * Avant l'ouverture (site.launched = false) : bouton désactivé « Disponible à l'ouverture ».
+ * Boutique fermée (network.json : shop.open = false) : bouton désactivé « Disponible à l'ouverture ».
  */
 export default function BuyButton({
   item,
@@ -21,7 +21,7 @@ export default function BuyButton({
 }) {
   const { add } = useCart();
 
-  if (!site.launched) {
+  if (!shopOpen) {
     return (
       <button
         type="button"

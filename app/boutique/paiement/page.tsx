@@ -1,26 +1,26 @@
 "use client";
 
 import LaunchNotice from "@/components/LaunchNotice";
-import { site } from "@/lib/data/site";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useCart, type CartItem } from "@/lib/cart";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCart } from "@/lib/cart";
+import { shopOpen } from "@/lib/data/shop";
 import { formatEuro, isValidUsername } from "@/lib/format";
-import { checkout } from "@/lib/services/shop";
+import { forgetCheckout, pay, pendingCheckout, rememberCheckout, startBasket, type Line } from "@/lib/services/shop";
 import Icon from "@/components/Icon";
 import { getCachedAccount } from "@/lib/services/link";
 
-type Done = { orderId: string; username: string; items: CartItem[]; total: number };
-
 function PaiementContent() {
-  const { items, total, ready, clear } = useCart();
+  const { items, total, ready } = useCart();
+  const params = useSearchParams();
   const [username, setUsername] = useState("");
   const [linked, setLinked] = useState(false);
   const [cgv, setCgv] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState<Done | null>(null);
+  const resumed = useRef(false);
 
   useEffect(() => {
     const acc = getCachedAccount();
@@ -30,51 +30,48 @@ function PaiementContent() {
     }
   }, []);
 
-  async function pay(e: React.FormEvent) {
+  /** Envoie le panier (identifiants et quantités seulement) puis part sur la page de paiement Tebex. */
+  async function finish(basket: string, lines: Line[]) {
+    const res = await pay(basket, lines);
+    forgetCheckout();
+    if (!res.ok) {
+      setLoading(false);
+      return setError(res.error);
+    }
+    window.location.href = res.data.checkout;
+  }
+
+  // Retour de la connexion Tebex (?basket=…) : on reprend là où on s'était arrêté.
+  useEffect(() => {
+    const basket = params.get("basket");
+    const pending = pendingCheckout();
+    if (resumed.current || !basket || !pending || pending.basket !== basket) return;
+    resumed.current = true;
+    setLoading(true);
+    void finish(pending.basket, pending.items);
+  }, [params]);
+
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!isValidUsername(username)) return setError("Pseudo Minecraft invalide (3 à 16 caractères : lettres, chiffres, _).");
     if (!cgv) return setError("Tu dois accepter les conditions générales de vente.");
     setLoading(true);
-    const res = await checkout({ username, items });
-    setLoading(false);
-    if (!res.ok) return setError(res.error);
-    setDone({ orderId: res.orderId, username, items, total });
-    clear();
+    const started = await startBasket(username);
+    if (!started.ok) {
+      setLoading(false);
+      return setError(started.error);
+    }
+    const lines = items.map((i) => ({ id: i.id, qty: i.qty }));
+    if (started.data.auth) {
+      rememberCheckout(started.data.basket, lines);
+      window.location.href = started.data.auth;
+      return;
+    }
+    await finish(started.data.basket, lines);
   }
 
-  if (done) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/15 text-success"><Icon name="check" size={36} /></div>
-        <h1 className="mt-6 font-display text-4xl">Merci {done.username} !</h1>
-        <p className="mt-3 text-muted">
-          Commande <span className="font-mono text-text">{done.orderId}</span> confirmée. Tes articles seront livrés à ta prochaine connexion
-          sur <span className="font-mono text-primary">play.mcbloc.fr</span>.
-        </p>
-        <ul className="mt-6 space-y-2 rounded-xl border border-line bg-surface p-4 text-left text-sm">
-          {done.items.map((i) => (
-            <li key={i.id} className="flex justify-between">
-              <span>{i.qty > 1 && `${i.qty} × `}{i.name}</span>
-              <span className="text-muted">{formatEuro(i.price * i.qty)}</span>
-            </li>
-          ))}
-          <li className="flex justify-between border-t border-line pt-2 font-bold">
-            <span>Total</span>
-            <span>{formatEuro(done.total)}</span>
-          </li>
-        </ul>
-        <p className="mt-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-left text-xs text-warning"><Icon name="warning-diamond" size={16} />
-          Paiement simulé : aucun débit n&apos;a été effectué (le module de paiement sera branché plus tard).
-        </p>
-        <Link href="/" className="btn-bloc mt-8 inline-block rounded-lg bg-gradient-brand px-6 py-3 font-bold text-white">
-          Retour à l&apos;accueil
-        </Link>
-      </div>
-    );
-  }
-
-  if (ready && items.length === 0) {
+  if (ready && items.length === 0 && !params.get("basket")) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="font-display text-3xl">Rien à payer</h1>
@@ -90,7 +87,7 @@ function PaiementContent() {
       <h1 className="mt-3 font-display text-4xl">Paiement</h1>
 
       <div className="mt-8 grid gap-6 md:grid-cols-[1fr_300px]">
-        <form onSubmit={pay} className="space-y-6 rounded-xl border border-line bg-surface p-6">
+        <form onSubmit={submit} className="space-y-6 rounded-xl border border-line bg-surface p-6">
           <div>
             <label htmlFor="username" className="font-semibold">Pseudo Minecraft</label>
             <p className="text-xs text-muted">Les articles seront livrés sur ce compte.</p>
@@ -117,15 +114,16 @@ function PaiementContent() {
             )}
           </div>
 
-          <div className="flex items-start gap-3 rounded-lg border border-dashed border-line p-4 text-sm text-muted"><Icon name="credit-card" size={22} className="text-primary" /><span>
-            Le choix du moyen de paiement (carte, PayPal…) s&apos;affichera ici une fois le prestataire branché.</span>
+          <div className="flex items-start gap-3 rounded-lg border border-line bg-bg-2 p-4 text-sm text-muted"><Icon name="credit-card" size={22} className="text-primary" /><span>
+            Le paiement se fait sur la page sécurisée de <span className="text-text">Tebex</span>, notre prestataire de paiement
+            (carte, PayPal…). Aucune donnée bancaire ne passe par MCBloc.</span>
           </div>
 
           <label className="flex items-start gap-3 text-sm">
             <input type="checkbox" checked={cgv} onChange={(e) => setCgv(e.target.checked)} className="mt-1 h-4 w-4 accent-[#00c6ff]" />
             <span>
-              J&apos;accepte les conditions générales de vente et je renonce à mon droit de rétractation pour ce contenu numérique livré
-              immédiatement.
+              J&apos;accepte les <Link href="/cgv" className="text-primary hover:underline">conditions générales de vente</Link> et je
+              renonce à mon droit de rétractation pour ce contenu numérique livré immédiatement.
             </span>
           </label>
 
@@ -136,9 +134,8 @@ function PaiementContent() {
             disabled={loading || !ready}
             className="btn-bloc w-full rounded-lg bg-accent px-4 py-3.5 font-bold text-bg disabled:opacity-60"
           >
-            {loading ? "Paiement en cours…" : `Payer ${formatEuro(total)}`}
+            {loading ? "Redirection vers le paiement…" : `Payer ${formatEuro(total)}`}
           </button>
-          <p className="flex items-center justify-center gap-1 text-xs text-warning"><Icon name="warning-diamond" size={14} /> Mode démo : le paiement est simulé.</p>
         </form>
 
         <aside className="h-fit rounded-xl border border-line bg-surface p-5">
@@ -155,6 +152,7 @@ function PaiementContent() {
             <span>Total</span>
             <span>{formatEuro(total)}</span>
           </div>
+          <p className="mt-3 text-xs text-dim">Livraison en jeu automatique, à ta prochaine connexion si tu n&apos;es pas en ligne.</p>
         </aside>
       </div>
     </div>
@@ -162,7 +160,7 @@ function PaiementContent() {
 }
 
 export default function PaiementPage() {
-  if (!site.launched) {
+  if (!shopOpen) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
         <LaunchNotice title="Paiement bientôt disponible" backHref="/boutique" backLabel="Voir la boutique">
@@ -171,5 +169,9 @@ export default function PaiementPage() {
       </div>
     );
   }
-  return <PaiementContent />;
+  return (
+    <Suspense fallback={<p className="mx-auto max-w-4xl px-4 py-12 text-muted">Chargement…</p>}>
+      <PaiementContent />
+    </Suspense>
+  );
 }

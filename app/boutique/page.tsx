@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Shop from "@/components/shop/Shop";
 import LaunchNotice from "@/components/LaunchNotice";
-import { site } from "@/lib/data/site";
+import { shopOpen } from "@/lib/data/shop";
 import { getCatalog } from "@/lib/services/cosmetics";
 
 // Catalogue des cosmétiques et coffres : lu chez le serveur (via le bot), rafraîchi toutes les 5 minutes.
@@ -30,7 +30,7 @@ export default async function BoutiquePage() {
         </p>
         </div>
       </header>
-      {!site.launched && (
+      {!shopOpen && (
         <div className="mb-8">
           <LaunchNotice title="La boutique ouvre avec le serveur" compact>
             Découvre dès maintenant les grades, pièces et cosmétiques. Les achats seront possibles le jour de l&apos;ouverture.

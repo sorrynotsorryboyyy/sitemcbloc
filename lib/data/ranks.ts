@@ -21,7 +21,7 @@ export const ranks: Rank[] = network.ranks.map((r) => ({ ...r, image: `/shop/ran
 
 /** Lignes du tableau comparatif : valeur par grade (true = inclus). */
 export const rankComparison: { label: string; values: (string | boolean)[] }[] = [
-  { label: "Bonus pièces / XP", values: ["+10 %", "+25 %", "+50 %", "+75 %"] },
+  { label: "Bonus pièces / XP", values: ranks.map((r) => r.bonus) },
   { label: "Préfixe & pseudo coloré", values: [true, true, true, true] },
   { label: "Piste VIP du pass", values: [false, true, true, true] },
   { label: "/fly au lobby", values: [false, true, true, true] },

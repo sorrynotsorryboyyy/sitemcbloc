@@ -2,7 +2,7 @@
 
 import type { Rank } from "@/lib/data/ranks";
 import { formatEuro } from "@/lib/format";
-import { site } from "@/lib/data/site";
+import { shopOpen } from "@/lib/data/shop";
 import BuyButton from "@/components/shop/BuyButton";
 
 /**
@@ -32,7 +32,7 @@ export default function RankPurchase({ rank }: { rank: Rank }) {
           <p className="mt-0.5 text-[11px] text-dim">le prix de {months} mois</p>
         </div>
       </div>
-      {site.launched ? (
+      {shopOpen ? (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <BuyButton item={item("30j", rank.priceMonthly)} label="30 jours" className="py-3" style={{ background: rank.color }} />
           <BuyButton item={item("vie", rank.priceLifetime)} label="À vie" className="py-3" style={{ background: rank.color }} />

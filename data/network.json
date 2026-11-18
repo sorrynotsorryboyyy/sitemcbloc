@@ -123,6 +123,21 @@
       "perks": ["+75 % de pièces et d'XP", "Cosmétiques Légende exclusifs", "Ailes, fée, ballon et titre Légende"]
     }
   ],
+  "$shopComment": "Boutique : open = paiements actifs (site ET bot). Prix en euros lus par le bot pour créer les articles Tebex : jamais envoyés par le navigateur. Boosters : effect = coins | xp | combo | network, seconds = durée (jeu actif, sauf network : temps réel).",
+  "shop": { "open": false },
+  "coinPacks": [
+    { "id": "coins-1000", "name": "Poignée", "coins": 1000, "bonus": 0, "price": 1.99 },
+    { "id": "coins-3000", "name": "Sacoche", "coins": 3000, "bonus": 300, "price": 4.99 },
+    { "id": "coins-7000", "name": "Coffre", "coins": 7000, "bonus": 1000, "price": 9.99, "tag": "Populaire" },
+    { "id": "coins-16000", "name": "Trésor", "coins": 16000, "bonus": 4000, "price": 19.99 },
+    { "id": "coins-45000", "name": "Montagne d'or", "coins": 45000, "bonus": 15000, "price": 49.99, "tag": "Meilleure offre" }
+  ],
+  "boosters": [
+    { "id": "boost-coins-x2-1h", "name": "Booster pièces ×2 — 1 h", "effect": "coins", "seconds": 3600, "price": 1.49, "scope": "perso", "description": "Double tes gains de pièces pendant 1 heure de jeu actif." },
+    { "id": "boost-xp-x2-1h", "name": "Booster XP ×2 — 1 h", "effect": "xp", "seconds": 3600, "price": 1.49, "scope": "perso", "description": "Double ton XP (niveau et pass saisonnier) pendant 1 heure de jeu actif." },
+    { "id": "boost-combo-24h", "name": "Combo ×2 — 24 h", "effect": "combo", "seconds": 86400, "price": 4.99, "scope": "perso", "description": "Pièces et XP doublés pendant 24 heures de jeu actif." },
+    { "id": "boost-network-1h", "name": "Booster réseau — 1 h", "effect": "network", "seconds": 3600, "price": 6.99, "scope": "réseau", "description": "Tout le réseau profite de +50 % de pièces pendant 1 heure. Ton pseudo est annoncé !" }
+  ],
   "rules": [
     { "text": "Respecte tout le monde : aucune insulte, discrimination ou harcèlement.", "where": ["jeu", "discord"] },
     { "text": "Pas de triche : hacks, mods ou clients modifiés, macros et exploitation de bugs sont interdits.", "where": ["jeu"] },

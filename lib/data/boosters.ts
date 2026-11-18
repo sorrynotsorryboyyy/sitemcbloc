@@ -1,23 +1,21 @@
 import type { IconName } from "@/components/Icon";
+import { network, type BoosterEffect, type NetworkBooster } from "@/lib/data/network";
 
-export type Booster = {
-  id: string;
-  name: string;
+export type Booster = NetworkBooster & {
   icon: IconName;
-  description: string;
-  price: number;
-  scope: "perso" | "réseau";
-  /** Illustration (ex. "/shop/boost-coins.png") — sinon icône pixel */
+  /** Illustration (ex. "/shop/boost-coins.svg") — sinon icône pixel */
   image?: string;
 };
 
-// ⚠ Propositions à valider : les boosters n'existent pas encore dans les plugins.
-export const boosters: Booster[] = [
-  { id: "boost-coins-x2-1h", name: "Booster pièces ×2 — 1 h", icon: "coins", image: "/shop/boost-coins.svg", description: "Double tes gains de pièces pendant 1 heure de jeu.", price: 1.49, scope: "perso" },
-  { id: "boost-xp-x2-1h", name: "Booster XP ×2 — 1 h", icon: "star", image: "/shop/boost-xp.svg", description: "Double ton XP de pass saisonnier pendant 1 heure.", price: 1.49, scope: "perso" },
-  { id: "boost-combo-24h", name: "Combo ×2 — 24 h", icon: "zap", image: "/shop/boost-combo.svg", description: "Pièces et XP doublés pendant 24 heures.", price: 4.99, scope: "perso" },
-  { id: "boost-network-1h", name: "Booster réseau — 1 h", icon: "globe", image: "/shop/boost-network.svg", description: "Tout le réseau profite de +50 % de pièces pendant 1 heure. Ton pseudo est annoncé !", price: 6.99, scope: "réseau" },
-];
+const look: Record<BoosterEffect, { icon: IconName; image: string }> = {
+  coins: { icon: "coins", image: "/shop/boost-coins.svg" },
+  xp: { icon: "star", image: "/shop/boost-xp.svg" },
+  combo: { icon: "zap", image: "/shop/boost-combo.svg" },
+  network: { icon: "globe", image: "/shop/boost-network.svg" },
+};
+
+// Boosters, durées et prix : data/network.json (mêmes valeurs pour le paiement et la livraison en jeu).
+export const boosters: Booster[] = network.boosters.map((b) => ({ ...b, ...look[b.effect] }));
 
 // Classes / kits payants en pièces (achat en jeu) — source : README mcblocManager.
 export const paidKits = [

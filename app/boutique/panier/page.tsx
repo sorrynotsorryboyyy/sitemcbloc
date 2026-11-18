@@ -1,7 +1,7 @@
 "use client";
 
 import LaunchNotice from "@/components/LaunchNotice";
-import { site } from "@/lib/data/site";
+import { shopOpen } from "@/lib/data/shop";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
 import { formatEuro } from "@/lib/format";
@@ -78,7 +78,7 @@ function PanierContent() {
 }
 
 export default function PanierPage() {
-  if (!site.launched) {
+  if (!shopOpen) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
         <LaunchNotice title="Le panier ouvrira avec le serveur" backHref="/boutique" backLabel="Voir la boutique">

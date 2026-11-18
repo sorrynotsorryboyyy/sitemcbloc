@@ -68,7 +68,7 @@ export default async function Home() {
       </section>
 
       {/* JEUX */}
-      <Section id="jeux" eyebrow="Mini-jeux" color="#00c6ff" title="Choisis ton terrain de jeu" subtitle="Trois modes, trois ambiances. Saute d'un jeu à l'autre depuis le lobby.">
+      <Section id="jeux" eyebrow="Mini-jeux" color="#00c6ff" title="Choisis ton terrain de jeu" subtitle={`${games.length} modes, ${games.length} ambiances. Saute d'un jeu à l'autre depuis le lobby.`}>
         <div className="flex flex-col gap-12">
           {games.map((g, i) => (
             <GameCard key={g.id} game={g} reverse={i % 2 === 1} />

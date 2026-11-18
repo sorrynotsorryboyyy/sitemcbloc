@@ -20,6 +20,7 @@ const gameAssets: Record<string, { banner: string; logo?: string }> = {
   "piggy-wars": { banner: "/images/banner-piggywars.png", logo: "/games/piggywars.png" },
   sumogames: { banner: "/images/banner-sumogames.png", logo: "/games/sumogames.png" },
   corewars: { banner: "/images/banner-corewars.png", logo: "/games/corewars.png" },
+  wildfarm: { banner: "/images/banner-wildfarm.png", logo: "/games/wildfarm.png" },
 };
 
 // Textes des jeux : data/network.json (identiques sur le site, le Discord et en jeu).

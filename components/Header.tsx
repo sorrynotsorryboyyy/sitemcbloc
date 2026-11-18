@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { nav, site } from "@/lib/data/site";
+import { shopOpen } from "@/lib/data/shop";
 import { useCart } from "@/lib/cart";
 import Icon from "@/components/Icon";
 import CopyIpButton from "@/components/CopyIpButton";
@@ -53,7 +54,7 @@ export default function Header() {
               <span className="hidden sm:inline">Discord</span>
             </a>
           )}
-          {site.launched && (
+          {shopOpen && (
             <Link
               href="/boutique/panier"
               className="relative flex h-10 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-medium hover:border-primary/60"

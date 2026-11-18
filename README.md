@@ -1,8 +1,11 @@
 # Site MCBloc
 
-Site du réseau de mini-jeux Minecraft **MCBloc** (`play.mcbloc.fr`). Next.js 15 + Tailwind CSS 4, hébergé sur Vercel.
+Site du réseau de mini-jeux Minecraft **MCBloc** (`play.mcbloc.fr`). Next.js 15 + Tailwind CSS 4, hébergé sur Vercel
+(chaque `git push` sur `main` redéploie).
 
-> État actuel : **front-end uniquement**. Statut serveur, paiement et liaison de compte sont simulés dans `lib/services/`.
+> État actuel : **avant l'ouverture**. Deux interrupteurs : `site.launched` (`lib/data/site.ts` : nombre de joueurs, IP)
+> et **`shop.open`** (`data/network.json` : panier et paiement Tebex, lu aussi par le bot). La liaison du compte
+> (`/site` en jeu) fonctionne déjà.
 
 ## Démarrer
 
@@ -10,35 +13,56 @@ Site du réseau de mini-jeux Minecraft **MCBloc** (`play.mcbloc.fr`). Next.js 15
 npm install
 npm run dev      # http://localhost:3000
 npm run build    # build de production
+npm run lint
+npm run icons    # icônes des cosmétiques (voir plus bas)
 ```
 
 ## Pages
 
 | Route | Contenu |
 |---|---|
-| `/` | Présentation : IP à copier, joueurs en ligne, mini-jeux, grades, FAQ |
-| `/boutique` | Onglets `#grades`, `#pieces`, `#cosmetiques`, `#boosters` |
-| `/boutique/panier` | Panier (sauvegardé dans le navigateur) |
-| `/boutique/paiement` | Pseudo + CGV + paiement **simulé** → confirmation |
-| `/compte` | Liaison du compte via `/site WEB-XXXXXX` en jeu, puis profil |
-| `/guide`, `/guide/<section>` | Guide des jeux (règles, commandes, chiffres) : envoyé par le serveur Minecraft, lu chez le bot (`/public/guide`, toutes les 5 min) |
+| `/` | Présentation : IP à copier, mini-jeux, grades, boutique |
+| `/boutique` | Onglets `#grades` (30 jours / à vie), `#pieces`, `#cosmetiques` (catalogue complet), `#boosters` |
+| `/boutique/panier`, `/boutique/paiement`, `/boutique/merci` | Panier, paiement Tebex (via le bot), confirmation : actifs si `shop.open` |
+| `/cgv` | Conditions générales de vente (**brouillon à faire relire**) |
+| `/compte` | Liaison du compte via `/site WEB-XXXXXX` en jeu, puis profil (grade, pièces, niveau, victoires) |
+| `/guide`, `/guide/<section>` | Guide des jeux (règles, commandes, tous les chiffres) |
+| `/vote`, `/regles`, `/actualites` | Votes (sites, récompenses), règles, actualités |
+| `/network.json` | Source unique des infos publiques, lue par le bot Discord et le proxy |
 
 `boutique.mcbloc.fr` redirige vers `mcbloc.fr/boutique` (voir `next.config.ts`).
+
+## D'où viennent les données (une seule source pour chaque chose)
+
+| Donnée | Source | Repris par |
+|---|---|---|
+| Liens, règles, jeux, grades (prix 30 jours / à vie, avantages), packs de pièces, boosters, `shop.open`, votes | `data/network.json` (ici) | bot Discord, proxy (`/regles`, `/grades` en jeu, guide) |
+| Guide des jeux, catalogue des cosmétiques, coffres mystères | serveur Minecraft (`cosmetics.yml`, config des jeux) | publié par le serveur, lu ici via le bot : `GET <bot>/public/guide`, rafraîchi toutes les 5 min (`lib/services/guide.ts`, `lib/services/cosmetics.ts`) |
+| Classements, top voteurs, profils liés | serveur Minecraft | via le bot : `/public/leaderboards`, `/public/votes`, `/public/site-link/*` |
+
+Adresse du bot : `NEXT_PUBLIC_BOT_URL` (par défaut `https://mcblocdidi-production.up.railway.app`).
 
 ## Où modifier quoi
 
 - Couleurs (charte `Theme.java`) : `app/globals.css` (`@theme`)
-- IP, Discord, commande de liaison : `lib/data/site.ts`
-- Jeux, FAQ : `lib/data/games.ts`
-- Grades (prix 30 jours et à vie, avantages) : `data/network.json` — mêmes prix en jeu (/grades) et sur Discord · Packs de pièces : `lib/data/coins.ts` · Boosters : `lib/data/boosters.ts`
-- Cosmétiques et coffres (copie de `cosmetics.yml`) : `lib/data/cosmetics.ts`
+- IP, Discord, interrupteur d'ouverture (`launched`) : `lib/data/site.ts`
+- Textes des jeux, grades, règles, votes : `data/network.json`
+- Visuels des jeux (bannière 1983×793, mascotte détourée 1254×1254) : `public/images/banner-<jeu>.png`,
+  `public/games/<jeu>.png`, déclarés dans `lib/data/games.ts`
+- Packs de pièces, boosters (prix, durée, effet) : `data/network.json` (`coinPacks`, `boosters`) ; visuels dans `lib/data/coins.ts` et `boosters.ts`
+- Cosmétiques : **rien à modifier ici** (prix et catalogue en jeu, `cosmetics.yml`). Seuls les libellés des types et
+  des raretés et les images des coffres sont dans `lib/data/cosmetics.ts`.
 
-## Brancher le backend
+## Icônes des cosmétiques
 
-Chaque fichier de `lib/services/` documente le contrat d'API attendu :
+`npm run icons` télécharge **une fois** les icônes d'inventaire des objets utilisés par le catalogue (wiki Minecraft)
+dans `public/items/` et met à jour `lib/data/item-icons.json`. À relancer quand un cosmétique utilise un nouvel objet.
+Avant que le serveur ait publié le catalogue : `npm run icons -- --from <chemin>/cosmetics.yml`.
+Une icône introuvable affiche l'icône du type de cosmétique.
 
-- `link.ts` : `POST /api/link/code`, `GET /api/link/status`, `POST /api/link/confirm` (appelé par le proxy pour `/site`, avec `Authorization: Bearer <LINK_SECRET>`). `/site` est distincte de `/lier`, qui sert à lier Discord (bot McBlocDidi).
-- `shop.ts` : checkout Tebex/Stripe → webhook → récompenses en attente récupérées par le proxy (`/api/rewards/pending` + `ack`, même modèle que McBlocDidi). Les pièces sont **ajoutées** au solde.
-- `serverStatus.ts` : mcsrvstat.us ou une API maison.
+## Paiement (Tebex)
 
-En mode dev, la page `/compte` affiche un bouton « Simuler /site » pour tester la liaison sans serveur.
+Le panier ne garde que des identifiants (`rank-vip-30j`, `rank-vip-vie`, `coins-7000`, `boost-combo-24h`…) ; nom et prix sont
+relus dans `network.json` (`lib/data/shop.ts`). `/boutique/paiement` appelle le bot (`lib/services/shop.ts`), qui crée le
+panier Tebex **à ses propres prix**, puis redirige vers la page de paiement Tebex ; retour sur `/boutique/merci`.
+La livraison ne dépend que du webhook signé reçu par le bot (voir son README). Ouvrir : `"shop": { "open": true }`, puis `git push`.
