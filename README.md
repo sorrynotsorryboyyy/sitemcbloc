@@ -4,7 +4,7 @@ Site du réseau de mini-jeux Minecraft **MCBloc** (`play.mcbloc.fr`). Next.js 15
 (chaque `git push` sur `main` redéploie).
 
 > État actuel : **avant l'ouverture**. Deux interrupteurs : `site.launched` (`lib/data/site.ts` : nombre de joueurs, IP)
-> et **`shop.open`** (`data/network.json` : panier et paiement Tebex, lu aussi par le bot). La liaison du compte
+> et **`shop.open`** (`data/network.json` : panier et paiement Stripe, lu aussi par le bot). La liaison du compte
 > (`/site` en jeu) fonctionne déjà.
 
 ## Démarrer
@@ -23,8 +23,8 @@ npm run icons    # icônes des cosmétiques (voir plus bas)
 |---|---|
 | `/` | Présentation : IP à copier, mini-jeux, grades, boutique |
 | `/boutique` | Onglets `#grades` (30 jours / à vie), `#pieces`, `#cosmetiques` (catalogue complet), `#boosters` |
-| `/boutique/panier`, `/boutique/paiement`, `/boutique/merci` | Panier, paiement Tebex (via le bot), confirmation : actifs si `shop.open` |
-| `/cgv` | Conditions générales de vente (**brouillon à faire relire**) |
+| `/boutique/panier`, `/boutique/paiement`, `/boutique/merci` | Panier, paiement Stripe (via le bot), confirmation : actifs si `shop.open` |
+| `/cgv`, `/mentions-legales` | CGV et mentions légales (**brouillon à faire relire**) ; infos du vendeur dans `lib/data/legal.ts` |
 | `/compte` | Liaison du compte via `/site WEB-XXXXXX` en jeu, puis profil (grade, pièces, niveau, victoires) |
 | `/guide`, `/guide/<section>` | Guide des jeux (règles, commandes, tous les chiffres) |
 | `/vote`, `/regles`, `/actualites` | Votes (sites, récompenses), règles, actualités |
@@ -60,9 +60,9 @@ dans `public/items/` et met à jour `lib/data/item-icons.json`. À relancer quan
 Avant que le serveur ait publié le catalogue : `npm run icons -- --from <chemin>/cosmetics.yml`.
 Une icône introuvable affiche l'icône du type de cosmétique.
 
-## Paiement (Tebex)
+## Paiement (Stripe)
 
 Le panier ne garde que des identifiants (`rank-vip-30j`, `rank-vip-vie`, `coins-7000`, `boost-combo-24h`…) ; nom et prix sont
-relus dans `network.json` (`lib/data/shop.ts`). `/boutique/paiement` appelle le bot (`lib/services/shop.ts`), qui crée le
-panier Tebex **à ses propres prix**, puis redirige vers la page de paiement Tebex ; retour sur `/boutique/merci`.
+relus dans `network.json` (`lib/data/shop.ts`). `/boutique/paiement` appelle le bot (`lib/services/shop.ts`), qui crée la
+session Stripe **à ses propres prix**, puis redirige vers la page de paiement Stripe ; retour sur `/boutique/merci`.
 La livraison ne dépend que du webhook signé reçu par le bot (voir son README). Ouvrir : `"shop": { "open": true }`, puis `git push`.

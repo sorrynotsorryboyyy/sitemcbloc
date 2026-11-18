@@ -29,6 +29,8 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-muted">
             <li><a className="hover:text-primary" href={site.discord} target="_blank" rel="noreferrer">Discord</a></li>
             <li><Link className="hover:text-primary" href="/regles">Règles</Link></li>
+            <li><Link className="hover:text-primary" href="/cgv">CGV</Link></li>
+            <li><Link className="hover:text-primary" href="/mentions-legales">Mentions légales</Link></li>
           </ul>
         </div>
       </div>

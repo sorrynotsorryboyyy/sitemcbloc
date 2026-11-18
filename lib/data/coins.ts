@@ -11,6 +11,6 @@ export type CoinPack = {
   image?: string;
 };
 
-// Packs et prix : data/network.json (le bot relit les mêmes prix pour le paiement Tebex).
+// Packs et prix : data/network.json (le bot relit les mêmes prix pour le paiement Stripe).
 // La livraison AJOUTE au solde (coins + bonus), jamais ne l'écrase.
 export const coinPacks: CoinPack[] = network.coinPacks.map((p, i) => ({ ...p, image: `/shop/coins-${Math.min(i + 1, 5)}.svg` }));

@@ -3,24 +3,21 @@
 import LaunchNotice from "@/components/LaunchNotice";
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { shopOpen } from "@/lib/data/shop";
 import { formatEuro, isValidUsername } from "@/lib/format";
-import { forgetCheckout, pay, pendingCheckout, rememberCheckout, startBasket, type Line } from "@/lib/services/shop";
+import { checkout } from "@/lib/services/shop";
 import Icon from "@/components/Icon";
 import { getCachedAccount } from "@/lib/services/link";
 
 function PaiementContent() {
   const { items, total, ready } = useCart();
-  const params = useSearchParams();
   const [username, setUsername] = useState("");
   const [linked, setLinked] = useState(false);
   const [cgv, setCgv] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const resumed = useRef(false);
 
   useEffect(() => {
     const acc = getCachedAccount();
@@ -30,48 +27,22 @@ function PaiementContent() {
     }
   }, []);
 
-  /** Envoie le panier (identifiants et quantités seulement) puis part sur la page de paiement Tebex. */
-  async function finish(basket: string, lines: Line[]) {
-    const res = await pay(basket, lines);
-    forgetCheckout();
-    if (!res.ok) {
-      setLoading(false);
-      return setError(res.error);
-    }
-    window.location.href = res.data.checkout;
-  }
-
-  // Retour de la connexion Tebex (?basket=…) : on reprend là où on s'était arrêté.
-  useEffect(() => {
-    const basket = params.get("basket");
-    const pending = pendingCheckout();
-    if (resumed.current || !basket || !pending || pending.basket !== basket) return;
-    resumed.current = true;
-    setLoading(true);
-    void finish(pending.basket, pending.items);
-  }, [params]);
-
+  /** Envoie le pseudo et le panier (identifiants et quantités seulement), puis part sur la page de paiement Stripe. */
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!isValidUsername(username)) return setError("Pseudo Minecraft invalide (3 à 16 caractères : lettres, chiffres, _).");
     if (!cgv) return setError("Tu dois accepter les conditions générales de vente.");
     setLoading(true);
-    const started = await startBasket(username);
-    if (!started.ok) {
+    const res = await checkout(username, items.map((i) => ({ id: i.id, qty: i.qty })));
+    if (!res.ok) {
       setLoading(false);
-      return setError(started.error);
+      return setError(res.error);
     }
-    const lines = items.map((i) => ({ id: i.id, qty: i.qty }));
-    if (started.data.auth) {
-      rememberCheckout(started.data.basket, lines);
-      window.location.href = started.data.auth;
-      return;
-    }
-    await finish(started.data.basket, lines);
+    window.location.href = res.url;
   }
 
-  if (ready && items.length === 0 && !params.get("basket")) {
+  if (ready && items.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="font-display text-3xl">Rien à payer</h1>
@@ -115,8 +86,8 @@ function PaiementContent() {
           </div>
 
           <div className="flex items-start gap-3 rounded-lg border border-line bg-bg-2 p-4 text-sm text-muted"><Icon name="credit-card" size={22} className="text-primary" /><span>
-            Le paiement se fait sur la page sécurisée de <span className="text-text">Tebex</span>, notre prestataire de paiement
-            (carte, PayPal…). Aucune donnée bancaire ne passe par MCBloc.</span>
+            Le paiement se fait sur une page sécurisée <span className="text-text">Stripe</span> (carte bancaire, Apple Pay, Google Pay).
+            Aucune donnée bancaire ne passe par MCBloc.</span>
           </div>
 
           <label className="flex items-start gap-3 text-sm">
@@ -169,9 +140,5 @@ export default function PaiementPage() {
       </div>
     );
   }
-  return (
-    <Suspense fallback={<p className="mx-auto max-w-4xl px-4 py-12 text-muted">Chargement…</p>}>
-      <PaiementContent />
-    </Suspense>
-  );
+  return <PaiementContent />;
 }
