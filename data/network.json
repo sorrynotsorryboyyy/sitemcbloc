@@ -147,6 +147,16 @@
     { "text": "Pas d'usurpation d'identité (staff ou joueurs).", "where": ["jeu", "discord"] },
     { "text": "Un seul compte par joueur : contourner une sanction avec un autre compte entraîne un bannissement.", "where": ["jeu"] },
     { "text": "Utilise les bons salons pour chaque sujet.", "where": ["discord"] },
+    { "text": "Pas d'arnaque ni d'échange contre de l'argent réel (comptes, objets, grades).", "where": ["jeu", "discord"] },
+    { "text": "Ne partage aucune information personnelle : ni la tienne, ni celle des autres (adresse, photos, identité…).", "where": ["jeu", "discord"] },
+    { "text": "Pas de mendicité : ne réclame ni grade, ni pièces, ni rôle staff.", "where": ["jeu", "discord"] },
+    { "text": "Pas de provocation ni de débats politiques ou religieux qui divisent.", "where": ["jeu", "discord"] },
+    { "text": "Antijeu interdit : saboter son équipe, s'allier entre équipes ou farmer des éliminations.", "where": ["jeu"] },
+    { "text": "Un bug se signale en ticket sur le Discord, sans en profiter : l'exploiter est sanctionné.", "where": ["jeu"] },
+    { "text": "Pseudo, photo de profil et statut corrects : rien d'insultant ni de choquant.", "where": ["discord"] },
+    { "text": "En vocal : pas de cris, d'abus de soundboard ni de modificateur de voix gênant.", "where": ["discord"] },
+    { "text": "Ne mentionne pas le staff sans raison : pour toute demande, ouvre un ticket.", "where": ["discord"] },
+    { "text": "Respecte les conditions d'utilisation de Discord (13 ans minimum).", "where": ["discord"] },
     { "text": "Le staff a le dernier mot : en cas de désaccord, ouvre un ticket sur le Discord.", "where": ["jeu", "discord"] }
   ],
   "votes": {
